@@ -18,12 +18,13 @@
     .card-3d{ perspective: 1200px; }
     .card-face{ transform-style: preserve-3d; transition: transform .5s ease; position: relative; }
     .flip .card-face{ transform: rotateY(180deg); }
-    .face-front, .face-back{ backface-visibility: hidden; }
+    .face-front, .face-back{ backface-visibility: hidden; position: relative; }
     .face-back{ transform: rotateY(180deg); }
-    /* Custom face images layered on top, centered */
-    .face-front::after, .face-back::after{ content:""; position:absolute; inset:0; background-repeat:no-repeat; background-position:center; background-size:contain; pointer-events:none; }
-    .face-front::after{ background-image: var(--front-img); }
-    .face-back::after{ background-image: var(--back-img); }
+    /* Custom face images centered behind content */
+    .face-front::before, .face-back::before{ content:""; position:absolute; inset:0; background-repeat:no-repeat; background-position:center; background-size:contain; pointer-events:none; z-index:0; }
+    .face-front::before{ background-image: var(--front-img); }
+    .face-back::before{ background-image: var(--back-img); }
+    .face-front > *, .face-back > * { position: relative; z-index: 1; }
 
     .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:.9rem; }
     .panel{ transition: all .25s ease; }
@@ -82,7 +83,7 @@
           </div>
         </div>
       </div>
-      <!-- Controls row under card: Back + Draw -->
+      <!-- Controls row under card: Back only (tap card to draw) -->
       <div class="mt-4 flex items-center justify-center gap-3">
         <button id="backBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Undo last draw" aria-label="Undo last">↩️</button>
       </div>
@@ -182,9 +183,7 @@
       r.setProperty('--back-img', CARD_IMAGES.back ? `url('${CARD_IMAGES.back}')` : 'none');
     }
 
-    const ruleEmoji = {
-      A:'🤞', 2:'👉', 3:'🙋', 4:'🧎', 5:'👥', 6:'🎀', 7:'☝️', 8:'🧑‍🤝‍🧑', 9:'🎤', 10:'🌊', J:'🗂️', Q:'❓', K:'👑'
-    };
+    const ruleEmoji = { A:'🤞', 2:'👉', 3:'🙋', 4:'🧎', 5:'👥', 6:'🎀', 7:'☝️', 8:'🧑‍🤝‍🧑', 9:'🎤', 10:'🌊', J:'🗂️', Q:'❓', K:'👑' };
 
     const categoriesPool = [
       "Dog breeds","Pizza toppings","Superheroes","Disney/Pixar movies","Board games",
@@ -265,9 +264,7 @@
     function miniCardEl(card){
       const el = document.createElement('div');
       el.className = 'mini-card rounded-xl shadow bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 text-white grid pop-in';
-      el.innerHTML = `<div class=\"self-start text-left p-1 text-xs font-bold\">${card.rank}</div><div class=\"place-self-center -mt-4 text-lg font-black\">${card.rank}${card.suit}</div><div class=\"self-end text-right p-1 text-[10px] opacity-80\">${card.suit}</div>`;
-      return el;
-    }</div><div class="place-self-center -mt-4 text-lg font-black">${card.rank}${card.suit}</div><div class="self-end text-right p-1 text-[10px] opacity-80">${card.suit}</div>`;
+      el.innerHTML = `<div class="self-start text-left p-1 text-xs font-bold">${card.rank}</div><div class="place-self-center -mt-4 text-lg font-black">${card.rank}${card.suit}</div><div class="self-end text-right p-1 text-[10px] opacity-80">${card.suit}</div>`;
       return el;
     }
 
@@ -309,26 +306,11 @@
     // Game Flow
     function newGame(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; featuredCategories=pickN(categoriesPool,4); featuredRules=pickN(ruleSuggestionsPool,8); $('#history').innerHTML=''; updateCounters(); renderCategories(); renderRuleIdeas(); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>'; $('#card').style.transform='rotateY(0deg)'; $('#cardWrapper').classList.remove('flip'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
 
-    function drawCard(){
-      if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; }
-      const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; }
-      updateCounters(); showCardFront(card);
-      const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:'';
-      $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card);
-      pushHistory(card);
-      // flip + between-card animation
-      flipOnce(); const w = document.getElementById('cardWrapper');
-      w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true});
-      if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
+    function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); const w = document.getElementById('cardWrapper'); w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true}); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
       // Dynamic panels
       if(card.rank==='J'){ showPanel(document.getElementById('panelCategories')); renderCategories(); hidePanel(document.getElementById('panelRuleIdeas')); }
       else if(card.rank==='K'){ showPanel(document.getElementById('panelRuleIdeas')); renderRuleIdeas(); hidePanel(document.getElementById('panelCategories')); }
       else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
-    } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
-      // Dynamic panels
-      if(card.rank==='J'){ showPanel($('#panelCategories')); renderCategories(); hidePanel($('#panelRuleIdeas')); }
-      else if(card.rank==='K'){ showPanel($('#panelRuleIdeas')); renderRuleIdeas(); hidePanel($('#panelCategories')); }
-      else { hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
     }
 
     function backOne(){
@@ -359,26 +341,25 @@
     function reshuffle(){ deck=shuffle(deck.concat(drawn)); drawn=[]; kingsDrawn=0; updateCounters(); toast('Deck reshuffled'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Deck reshuffled. Tap to draw.</span>'; }
 
     // Events
-    
-    $('#backBtn').addEventListener('click', backOne);
-    $('#cardWrapper').addEventListener('click', drawCard);
-    $('#cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); drawCard(); }});
-    $('#reshuffleBtn').addEventListener('click', reshuffle);
-    $('#resetBtn').addEventListener('click', newGame);
-    $('#safeToggle').addEventListener('change', ()=>{ if(drawn.length){ const last=drawn[drawn.length-1]; $('#actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last); } });
-    $('#rerollCats').addEventListener('click', ()=>{ featuredCategories=pickN(categoriesPool,4); renderCategories(); toast('Fresh categories'); });
-    $('#rerollRules').addEventListener('click', ()=>{ featuredRules=pickN(ruleSuggestionsPool,8); renderRuleIdeas(); toast('New ideas'); });
+    document.getElementById('backBtn').addEventListener('click', backOne);
+    document.getElementById('cardWrapper').addEventListener('click', drawCard);
+    document.getElementById('cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); drawCard(); }});
+    document.getElementById('reshuffleBtn').addEventListener('click', reshuffle);
+    document.getElementById('resetBtn').addEventListener('click', newGame);
+    document.getElementById('safeToggle').addEventListener('change', ()=>{ if(drawn.length){ const last=drawn[drawn.length-1]; document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last); } });
+    document.getElementById('rerollCats').addEventListener('click', ()=>{ featuredCategories=pickN(categoriesPool,4); renderCategories(); toast('Fresh categories'); });
+    document.getElementById('rerollRules').addEventListener('click', ()=>{ featuredRules=pickN(ruleSuggestionsPool,8); renderRuleIdeas(); toast('New ideas'); });
 
     // Header buttons
-    $('#playersBtn').addEventListener('click', ()=>{ $('#playersSheet').classList.remove('hidden'); });
-    $('#playersClose').addEventListener('click', ()=>{ $('#playersSheet').classList.add('hidden'); });
-    $('#dirToggle').addEventListener('click', ()=>{ clockwise=!clockwise; savePlayers(); renderPlayers(); });
-    $('#nextTurn').addEventListener('click', nextTurn);
-    $('#prevTurn').addEventListener('click', prevTurn);
+    document.getElementById('playersBtn').addEventListener('click', ()=>{ document.getElementById('playersSheet').classList.remove('hidden'); });
+    document.getElementById('playersClose').addEventListener('click', ()=>{ document.getElementById('playersSheet').classList.add('hidden'); });
+    document.getElementById('dirToggle').addEventListener('click', ()=>{ clockwise=!clockwise; savePlayers(); renderPlayers(); });
+    document.getElementById('nextTurn').addEventListener('click', nextTurn);
+    document.getElementById('prevTurn').addEventListener('click', prevTurn);
 
-    $('#themeToggle').addEventListener('click', ()=>{ const dark=document.documentElement.classList.contains('dark'); setTheme(dark?'light':'dark'); });
-    $('#shareBtn').addEventListener('click', doShare);
-    $('#installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('#installBtn').classList.add('hidden'); });
+    document.getElementById('themeToggle').addEventListener('click', ()=>{ const dark=document.documentElement.classList.contains('dark'); setTheme(dark?'light':'dark'); });
+    document.getElementById('shareBtn').addEventListener('click', doShare);
+    document.getElementById('installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; document.getElementById('installBtn').classList.add('hidden'); });
 
     // Init
     function init(){ initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame(); loadFromUrl(); }
