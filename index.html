@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>King's Cup — Party Web App</title>
-  <meta name="description" content="Mobile-friendly King's Cup web app. Jack reveals Categories; King suggests New Rules. Shareable link + PWA-ready." />
+  <meta name="description" content="Mobile-friendly King's Cup web app. Tap the card to draw. Jack reveals Categories; King suggests New Rules. Shareable link + PWA-ready." />
   <meta name="theme-color" content="#7c3aed" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,9 +20,10 @@
     .flip .card-face{ transform: rotateY(180deg); }
     .face-front, .face-back{ backface-visibility: hidden; }
     .face-back{ transform: rotateY(180deg); }
-    .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:2.5rem; height:2.5rem; border-radius:.75rem; }
+    .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:.9rem; }
     .panel{ transition: all .25s ease; }
     .panel.hiddenish{ opacity:0; max-height:0; overflow:hidden; pointer-events:none; }
+    .mini-card{ width:3.25rem; height:4.5rem; }
   </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -40,9 +41,9 @@
 
   <!-- Main (single column, mobile-first) -->
   <main class="max-w-2xl mx-auto px-4 py-6 space-y-4">
-    <!-- Card -->
+    <!-- Card (tap to draw) -->
     <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 card-3d">
-      <div id="cardWrapper" class="relative mx-auto w-[240px] h-[336px] md:w-[280px] md:h-[392px]">
+      <div id="cardWrapper" role="button" tabindex="0" aria-label="Draw card" class="relative mx-auto w-[240px] h-[336px] md:w-[280px] md:h-[392px] cursor-pointer select-none">
         <div id="card" class="card-face absolute inset-0 rounded-2xl shadow-xl">
           <!-- FRONT -->
           <div class="face-front absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 p-4 text-white grid">
@@ -62,14 +63,15 @@
           <!-- BACK -->
           <div class="face-back absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,.25),transparent_40%),radial-gradient(circle_at_70%_80%,rgba(255,255,255,.15),transparent_40%),linear-gradient(135deg,#111827,#4c1d95)] grid place-items-center">
             <div class="text-center">
-              <div class="text-white/90 text-sm">Draw to begin</div>
+              <div class="text-white/90 text-sm">Tap to draw</div>
               <div class="text-white text-4xl font-black">K♛C</div>
             </div>
           </div>
         </div>
       </div>
-      <!-- Button directly under card -->
+      <!-- Controls row under card: Back + Draw -->
       <div class="mt-4 flex items-center justify-center gap-3">
+        <button id="backBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Undo last draw" aria-label="Undo last">↩️</button>
         <button id="drawBtn" class="px-5 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold shadow-sm w-full sm:w-auto">Draw Card</button>
       </div>
       <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -82,7 +84,7 @@
       </div>
     </section>
 
-    <!-- Dynamic instruction text (no heading) -->
+    <!-- Rule area directly under controls (with a fun visual) -->
     <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
       <div id="actionText" class="text-base text-slate-700 dark:text-slate-300"></div>
     </section>
@@ -106,10 +108,10 @@
       <ul id="ruleIdeas" class="text-sm text-amber-900/90 dark:text-amber-200/90 space-y-2"></ul>
     </section>
 
-    <!-- History -->
+    <!-- History as mini cards -->
     <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
       <h3 class="font-semibold">History</h3>
-      <div id="history" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm"></div>
+      <div id="history" class="mt-3 grid grid-cols-6 sm:grid-cols-8 gap-2"></div>
     </section>
   </main>
 
@@ -158,6 +160,10 @@
       J: { name: "Categories", desc: "Pick a category and go around naming items in it. First miss takes a sip/penalty." },
       Q: { name: "Question Master", desc: "If players answer your questions, they take a sip/penalty. Lasts until the next Queen is drawn." },
       K: { name: "King’s Cup", desc: "First three Kings add a splash to the Cup; the fourth King drinks it (or a big sip in Gentle mode)." },
+    };
+
+    const ruleEmoji = {
+      A:'🤞', 2:'👉', 3:'🙋', 4:'🧎', 5:'👥', 6:'🎀', 7:'☝️', 8:'🧑‍🤝‍🧑', 9:'🎤', 10:'🌊', J:'🗂️', Q:'❓', K:'👑'
     };
 
     const categoriesPool = [
@@ -223,14 +229,32 @@
 
     function flipOnce(){ const w=$('#cardWrapper'); w.classList.remove('flip'); void w.offsetWidth; w.classList.add('flip'); }
 
+    function ruleIcon(rank){
+      const e = ruleEmoji[rank] || '🎲';
+      return `<span class="inline-grid place-items-center w-10 h-10 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/40 dark:to-fuchsia-900/40 text-xl">${e}</span>`;
+    }
+
     function actionTextFor(card){
       const gentle=$('#safeToggle').checked; const base=DEFAULT_RULES[card.rank]; if(!base) return '';
       let desc=base.desc.replaceAll('drink', gentle?'sip/penalty':'drink').replaceAll('sips', gentle?'sips/penalties':'sips').replaceAll('sip', gentle?'sip/penalty':'sip');
       if(card.rank==='K'){ const remaining=4-(kingsDrawn+1); desc += remaining>0 ? ` There will be ${remaining} King(s) left after this.` : ` This is the final King!`; }
-      return `<div class="leading-relaxed">${desc}</div>` + (players.length?`<div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Current: <b>${players[currentIndex]||'—'}</b></div>`:'');
+      const current = players.length?`<div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Current: <b>${players[currentIndex]||'—'}</b></div>`:'';
+      return `<div class="flex items-start gap-3">${ruleIcon(card.rank)}<div class="leading-relaxed">${desc}</div></div>${current}`;
     }
 
-    function pushHistory(card){ const box=$('#history'); const pill=document.createElement('div'); pill.className='px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'; pill.textContent=`${card.rank}${card.suit} – ${DEFAULT_RULES[card.rank]?.name||''}`; box.prepend(pill); while(box.children.length>12){ box.lastElementChild.remove(); } }
+    function miniCardEl(card){
+      const el = document.createElement('div');
+      el.className = 'mini-card rounded-xl shadow bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 text-white grid';
+      el.innerHTML = `<div class="self-start text-left p-1 text-xs font-bold">${card.rank}</div><div class="place-self-center -mt-4 text-lg font-black">${card.rank}${card.suit}</div><div class="self-end text-right p-1 text-[10px] opacity-80">${card.suit}</div>`;
+      return el;
+    }
+
+    function pushHistory(card){
+      const box=$('#history');
+      const el = miniCardEl(card);
+      box.prepend(el);
+      while(box.children.length>24){ box.lastElementChild.remove(); }
+    }
 
     function renderCategories(){ const box=$('#categories'); box.innerHTML=''; featuredCategories.forEach(c=>{ const chip=document.createElement('button'); chip.className='px-3 py-1.5 rounded-full bg-white/70 hover:bg-white text-indigo-950 dark:text-indigo-100'; chip.textContent=c; chip.addEventListener('click',()=>{ navigator.clipboard?.writeText(c); toast(`Copied “${c}”`); }); box.appendChild(chip); }); }
     function renderRuleIdeas(){ const ul=$('#ruleIdeas'); ul.innerHTML=''; featuredRules.forEach(r=>{ const li=document.createElement('li'); li.innerHTML=`<span>${r}</span>`; ul.appendChild(li); }); }
@@ -261,19 +285,47 @@
     function loadFromUrl(){ const s=new URL(location.href).searchParams.get('s'); if(!s) return; try{ applyState(JSON.parse(base64urlDecode(s))); }catch{} }
 
     // Game Flow
-    function newGame(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; featuredCategories=pickN(categoriesPool,4); featuredRules=pickN(ruleSuggestionsPool,8); $('#history').innerHTML=''; updateCounters(); renderCategories(); renderRuleIdeas(); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap <b>Draw Card</b> to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>'; $('#card').style.transform='rotateY(0deg)'; $('#cardWrapper').classList.remove('flip'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+    function newGame(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; featuredCategories=pickN(categoriesPool,4); featuredRules=pickN(ruleSuggestionsPool,8); $('#history').innerHTML=''; updateCounters(); renderCategories(); renderRuleIdeas(); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card (or use Draw) to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>'; $('#card').style.transform='rotateY(0deg)'; $('#cardWrapper').classList.remove('flip'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
 
     function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
       // Dynamic panels
       if(card.rank==='J'){ showPanel($('#panelCategories')); renderCategories(); hidePanel($('#panelRuleIdeas')); }
-      else if(card.rank==='K'){ showPanel($('#panelRuleIdeas')); renderRuleIdeas(); }
-      else { hidePanel($('#panelCategories')); }
+      else if(card.rank==='K'){ showPanel($('#panelRuleIdeas')); renderRuleIdeas(); hidePanel($('#panelCategories')); }
+      else { hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
     }
 
-    function reshuffle(){ deck=shuffle(deck.concat(drawn)); drawn=[]; kingsDrawn=0; updateCounters(); toast('Deck reshuffled'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+    function backOne(){
+      if(!drawn.length){ toast('Nothing to undo'); return; }
+      const last = drawn.pop();
+      if(last.rank==='K' && kingsDrawn>0) kingsDrawn--;
+      deck.push(last); // put it back on top
+      updateCounters();
+      // remove latest history card
+      const h = $('#history'); if(h.firstElementChild) h.removeChild(h.firstElementChild);
+      // restore previous state
+      const prev = drawn[drawn.length-1];
+      if(prev){
+        showCardFront(prev);
+        $('#actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${prev.rank}${prev.suit} – <b>${DEFAULT_RULES[prev.rank]?.name||''}</b></div>` + actionTextFor(prev);
+        if(prev.rank==='J'){ showPanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+        else if(prev.rank==='K'){ showPanel($('#panelRuleIdeas')); hidePanel($('#panelCategories')); }
+        else { hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+      } else {
+        // back to start
+        $('#frontRank').textContent='?'; $('#frontSuit').textContent='♠'; $('#frontCornerTL').textContent='★'; $('#frontCornerBR').textContent='★'; $('#frontSuitTL').textContent='♣'; $('#frontSuitBR').textContent='♣';
+        $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin.</span>';
+        hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas'));
+      }
+      if(players.length) prevTurn();
+    }
+
+    function reshuffle(){ deck=shuffle(deck.concat(drawn)); drawn=[]; kingsDrawn=0; updateCounters(); toast('Deck reshuffled'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Deck reshuffled. Tap to draw.</span>'; }
 
     // Events
     $('#drawBtn').addEventListener('click', drawCard);
+    $('#backBtn').addEventListener('click', backOne);
+    $('#cardWrapper').addEventListener('click', drawCard);
+    $('#cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); drawCard(); }});
     $('#reshuffleBtn').addEventListener('click', reshuffle);
     $('#resetBtn').addEventListener('click', newGame);
     $('#safeToggle').addEventListener('change', ()=>{ if(drawn.length){ const last=drawn[drawn.length-1]; $('#actionText').innerHTML = `<div class=\"mb-1 text-sm text-slate-500 dark:text-slate-400\">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last); } });
@@ -292,7 +344,8 @@
     $('#installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('#installBtn').classList.add('hidden'); });
 
     // Init
-    initTheme(); registerSW(); loadPlayers(); newGame(); loadFromUrl();
+    function init(){ initTheme(); registerSW(); loadPlayers(); newGame(); loadFromUrl(); }
+    init();
   </script>
 </body>
 </html>
