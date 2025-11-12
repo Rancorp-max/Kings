@@ -13,17 +13,30 @@
   <script>tailwind.config = { darkMode: 'class' }</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root{ --brand:#7c3aed; --brand-accent:#22c55e; --brand-warm:#f59e0b; }
+    :root{ --brand:#7c3aed; --brand-accent:#22c55e; --brand-warm:#f59e0b; --front-img:none; --back-img:none; }
     html,body{ font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
     .card-3d{ perspective: 1200px; }
-    .card-face{ transform-style: preserve-3d; transition: transform .5s ease; }
+    .card-face{ transform-style: preserve-3d; transition: transform .5s ease; position: relative; }
     .flip .card-face{ transform: rotateY(180deg); }
     .face-front, .face-back{ backface-visibility: hidden; }
     .face-back{ transform: rotateY(180deg); }
+    /* Custom face images layered on top, centered */
+    .face-front::after, .face-back::after{ content:""; position:absolute; inset:0; background-repeat:no-repeat; background-position:center; background-size:contain; pointer-events:none; }
+    .face-front::after{ background-image: var(--front-img); }
+    .face-back::after{ background-image: var(--back-img); }
+
     .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:.9rem; }
     .panel{ transition: all .25s ease; }
     .panel.hiddenish{ opacity:0; max-height:0; overflow:hidden; pointer-events:none; }
     .mini-card{ width:3.25rem; height:4.5rem; }
+
+    /* Between-card animation on the wrapper */
+    @keyframes card-swap{ 0%{ transform: translateY(0) scale(1); } 50%{ transform: translateY(-6px) scale(1.03);} 100%{ transform: translateY(0) scale(1);} }
+    .card-swap{ animation: card-swap 320ms ease; }
+
+    /* Pop-in for history minis */
+    @keyframes pop{ 0%{ transform: scale(.85); opacity:0; } 100%{ transform: scale(1); opacity:1; } }
+    .pop-in{ animation: pop 180ms ease-out; }
   </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -162,6 +175,14 @@
       K: { name: "King’s Cup", desc: "First three Kings add a splash to the Cup; the fourth King drinks it (or a big sip in Gentle mode)." },
     };
 
+    // Optional custom card face images (replace with your paths)
+    const CARD_IMAGES = { front: "", back: "" }; // e.g., "/cards/front.png", "/cards/back.png"
+    function applyCardImages(){
+      const r = document.documentElement.style;
+      r.setProperty('--front-img', CARD_IMAGES.front ? `url('${CARD_IMAGES.front}')` : 'none');
+      r.setProperty('--back-img', CARD_IMAGES.back ? `url('${CARD_IMAGES.back}')` : 'none');
+    }
+
     const ruleEmoji = {
       A:'🤞', 2:'👉', 3:'🙋', 4:'🧎', 5:'👥', 6:'🎀', 7:'☝️', 8:'🧑‍🤝‍🧑', 9:'🎤', 10:'🌊', J:'🗂️', Q:'❓', K:'👑'
     };
@@ -244,8 +265,10 @@
 
     function miniCardEl(card){
       const el = document.createElement('div');
-      el.className = 'mini-card rounded-xl shadow bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 text-white grid';
-      el.innerHTML = `<div class="self-start text-left p-1 text-xs font-bold">${card.rank}</div><div class="place-self-center -mt-4 text-lg font-black">${card.rank}${card.suit}</div><div class="self-end text-right p-1 text-[10px] opacity-80">${card.suit}</div>`;
+      el.className = 'mini-card rounded-xl shadow bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 text-white grid pop-in';
+      el.innerHTML = `<div class=\"self-start text-left p-1 text-xs font-bold\">${card.rank}</div><div class=\"place-self-center -mt-4 text-lg font-black\">${card.rank}${card.suit}</div><div class=\"self-end text-right p-1 text-[10px] opacity-80\">${card.suit}</div>`;
+      return el;
+    }</div><div class="place-self-center -mt-4 text-lg font-black">${card.rank}${card.suit}</div><div class="self-end text-right p-1 text-[10px] opacity-80">${card.suit}</div>`;
       return el;
     }
 
@@ -287,7 +310,22 @@
     // Game Flow
     function newGame(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; featuredCategories=pickN(categoriesPool,4); featuredRules=pickN(ruleSuggestionsPool,8); $('#history').innerHTML=''; updateCounters(); renderCategories(); renderRuleIdeas(); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card (or use Draw) to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>'; $('#card').style.transform='rotateY(0deg)'; $('#cardWrapper').classList.remove('flip'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
 
-    function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
+    function drawCard(){
+      if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; }
+      const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; }
+      updateCounters(); showCardFront(card);
+      const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:'';
+      $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card);
+      pushHistory(card);
+      // flip + between-card animation
+      flipOnce(); const w = document.getElementById('cardWrapper');
+      w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true});
+      if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
+      // Dynamic panels
+      if(card.rank==='J'){ showPanel(document.getElementById('panelCategories')); renderCategories(); hidePanel(document.getElementById('panelRuleIdeas')); }
+      else if(card.rank==='K'){ showPanel(document.getElementById('panelRuleIdeas')); renderRuleIdeas(); hidePanel(document.getElementById('panelCategories')); }
+      else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+    } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
       // Dynamic panels
       if(card.rank==='J'){ showPanel($('#panelCategories')); renderCategories(); hidePanel($('#panelRuleIdeas')); }
       else if(card.rank==='K'){ showPanel($('#panelRuleIdeas')); renderRuleIdeas(); hidePanel($('#panelCategories')); }
@@ -344,7 +382,7 @@
     $('#installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('#installBtn').classList.add('hidden'); });
 
     // Init
-    function init(){ initTheme(); registerSW(); loadPlayers(); newGame(); loadFromUrl(); }
+    function init(){ initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame(); loadFromUrl(); }
     init();
   </script>
 </body>
