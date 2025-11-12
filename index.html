@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>King's Cup — Party Web App</title>
+  <meta name="description" content="A fun, mobile-friendly King's Cup web app with custom house rules, auto-picked Categories, and New Rule suggestions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --brand:#7c3aed; /* violet-600 */
+      --brand-accent:#22c55e; /* green-500 */
+      --brand-warm:#f59e0b; /* amber-500 */
+    }
+    html,body{font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";}
+    .card-3d{
+      perspective: 1200px;
+    }
+    .card-face{
+      transform-style: preserve-3d;
+      transition: transform .5s ease;
+    }
+    .flip .card-face{
+      transform: rotateY(180deg);
+    }
+    .face-front, .face-back{
+      backface-visibility: hidden;
+    }
+    .face-back{ transform: rotateY(180deg); }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <header class="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/90 border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-white font-black">K</div>
+      <div class="flex-1">
+        <h1 class="text-xl font-extrabold tracking-tight">King's Cup — House Rules Remix</h1>
+        <p class="text-xs text-slate-500">10 = Waterfall · Jack = Categories · Ace = Never Have I Ever</p>
+      </div>
+      <button id="newGameBtn" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold shadow-sm">Start New Game</button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-[18rem_1fr_20rem] gap-6">
+    <!-- Left: Game panel -->
+    <aside class="space-y-4">
+      <section class="p-4 rounded-2xl bg-white shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-800 mb-3">Game Controls</h2>
+        <div class="flex gap-2">
+          <button id="drawBtn" class="flex-1 px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Draw Card</button>
+          <button id="reshuffleBtn" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-medium">Reshuffle</button>
+        </div>
+        <div class="mt-3 grid grid-cols-3 text-center text-sm">
+          <div><div class="text-slate-500">Deck</div><div id="deckCount" class="font-semibold">52</div></div>
+          <div><div class="text-slate-500">Kings Cup</div><div id="kingsCount" class="font-semibold">0 / 4</div></div>
+          <div><div class="text-slate-500">Drawn</div><div id="drawnCount" class="font-semibold">0</div></div>
+        </div>
+        <div class="mt-4 flex items-center justify-between text-sm">
+          <label class="inline-flex items-center gap-2">
+            <input id="safeToggle" type="checkbox" class="h-4 w-4 rounded border-slate-300" />
+            <span class="text-slate-700">Gentle mode (non‑alcoholic wording)</span>
+          </label>
+          <button id="resetBtn" class="text-slate-600 hover:text-slate-900">Reset</button>
+        </div>
+      </section>
+
+      <section class="p-4 rounded-2xl bg-white shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-800 mb-2">House Rules (this build)</h2>
+        <ul class="text-sm space-y-1 text-slate-700" id="rulesList"></ul>
+      </section>
+
+      <section class="p-4 rounded-2xl bg-amber-50 border border-amber-200">
+        <h2 class="font-bold text-amber-900 mb-1">Safety</h2>
+        <p class="text-sm text-amber-900/90">Play responsibly. Anyone can skip any action. Consider swapping in water/soda/juice. End any round that feels unsafe.</p>
+      </section>
+    </aside>
+
+    <!-- Center: Card & action -->
+    <section class="space-y-4">
+      <div class="p-4 rounded-2xl bg-white shadow-sm border border-slate-200 card-3d">
+        <div id="cardWrapper" class="relative mx-auto w-[240px] h-[336px] md:w-[280px] md:h-[392px]">
+          <div id="card" class="card-face absolute inset-0 rounded-2xl shadow-xl">
+            <!-- FRONT -->
+            <div class="face-front absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 p-4 text-white grid">
+              <div class="self-start text-left">
+                <div id="frontCornerTL" class="text-2xl font-extrabold">★</div>
+                <div id="frontSuitTL" class="-mt-1 opacity-80">♣︎</div>
+              </div>
+              <div class="place-self-center text-center">
+                <div id="frontRank" class="text-7xl font-black drop-shadow">?</div>
+                <div id="frontSuit" class="text-4xl opacity-90">♠︎</div>
+              </div>
+              <div class="self-end text-right">
+                <div id="frontCornerBR" class="text-2xl font-extrabold">★</div>
+                <div id="frontSuitBR" class="-mt-1 opacity-80">♣︎</div>
+              </div>
+            </div>
+            <!-- BACK -->
+            <div class="face-back absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,.25),transparent_40%),radial-gradient(circle_at_70%_80%,rgba(255,255,255,.15),transparent_40%),linear-gradient(135deg,#111827,#4c1d95)] grid place-items-center">
+              <div class="text-center">
+                <div class="text-white/90 text-sm">Click “Draw Card”</div>
+                <div class="text-white text-4xl font-black">K♛C</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-white shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-800">Action</h2>
+        <div id="actionText" class="mt-2 text-slate-700"></div>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-white shadow-sm border border-slate-200">
+        <h3 class="font-semibold text-slate-800">History</h3>
+        <div id="history" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm"></div>
+      </div>
+    </section>
+
+    <!-- Right: Categories & New Rules -->
+    <aside class="space-y-4">
+      <section class="p-4 rounded-2xl bg-white shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-bold text-slate-800">This Game's Categories</h2>
+          <button id="rerollCats" class="text-slate-600 hover:text-slate-900 text-sm">Reroll</button>
+        </div>
+        <p class="text-xs text-slate-500">Auto‑picked 4 fresh category prompts at the start of each game. When someone draws a Jack, pick one.</p>
+        <div id="categories" class="mt-3 flex flex-wrap gap-2"></div>
+      </section>
+
+      <section class="p-4 rounded-2xl bg-white shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-bold text-slate-800">New Rule Suggestions</h2>
+          <button id="rerollRules" class="text-slate-600 hover:text-slate-900 text-sm">Shuffle</button>
+        </div>
+        <ul id="ruleIdeas" class="text-sm text-slate-700 space-y-2"></ul>
+      </section>
+
+      <section class="p-4 rounded-2xl bg-white shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-800 mb-1">Quick How‑To</h2>
+        <p class="text-sm text-slate-600">Place a cup in the center. Draw cards in turns and follow the action shown. First three Kings add a splash to the cup; the 4th King drinks it (or takes a big sip in Gentle mode).</p>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
+    Built for friends & laughs. Host as a static site on Vercel or GitHub Pages. 
+  </footer>
+
+  <script>
+    // --- Data ---
+    const SUITS = ["♠", "♥", "♦", "♣"]; // display only
+    const RANKS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+
+    const categoriesPool = [
+      "Dog breeds","Pizza toppings","Superheroes","Disney/Pixar movies","Board games",
+      "Countries in Europe","NBA teams","Car brands","Programming languages","Ice cream flavors",
+      "Video game characters","Musical instruments","Shapes","Fruits","Vegetables","Pokemon",
+      "U.S. states / Canadian provinces","Star Wars characters","Streaming shows","Coffee drinks",
+      "Chocolate brands","Cartoon characters","Mythical creatures","Sportswear brands","Fast food chains",
+      "Rappers","Pop stars","Bird species","Dinosaurs","Household chores","Things that are red",
+      "Mountains / hikes","Famous painters","Book genres","Breakfast foods","Types of pasta",
+      "Dog tricks","Hobbies","School subjects","Flowers","Sea creatures","Cookie types","Languages",
+      "Cities with a subway","Animals with stripes","Toys","Camping items","Card games","Weather words"
+    ];
+
+    const ruleSuggestionsPool = [
+      "No first names (use nicknames only)",
+      "No pointing (use elbows)",
+      "Speak in a movie quote once per turn",
+      "Tiny T-Rex arms while talking",
+      "British accent until your next draw",
+      "No using the word ‘drink’",
+      "Reverse the turn order",
+      "Clap before you speak",
+      "Thumb Master: last to put thumb on table drinks",
+      "No swearing",
+      "Rhyme every sentence end",
+      "Stand to speak",
+      "No looking at the card when you draw (someone else reads it)",
+      "Only whispering",
+      "Raise pinky when sipping",
+      "No touching hair",
+      "Questions must be answered with a question",
+      "Talk like a pirate",
+      "Ban a letter (e.g., no ‘S’ words)",
+      "Swap seats with someone of your choice"
+    ];
+
+    // House rules mapping (includes your requested remaps)
+    const ACTIONS = {
+      A: { name: "Never Have I Ever", desc: "Each player holds up 3 fingers (or 5). The drawer starts: say something you’ve never done. Anyone who has, takes a sip/penalty and lowers a finger." },
+      2: { name: "You", desc: "Choose someone to take a sip/penalty." },
+      3: { name: "Me", desc: "You take a sip/penalty." },
+      4: { name: "Floor", desc: "Last to touch the floor takes a sip/penalty." },
+      5: { name: "Guys", desc: "All who identify as guys take a sip/penalty. (Alt: anyone wearing jeans)" },
+      6: { name: "Girls", desc: "All who identify as girls take a sip/penalty. (Alt: anyone with glasses)" },
+      7: { name: "Heaven", desc: "Last to point upward takes a sip/penalty." },
+      8: { name: "Mate", desc: "Pick a mate; you two take sips/penalties together for the rest of the game." },
+      9: { name: "Rhyme", desc: "Say a word; go around rhyming it. First stumble or repeat takes a sip/penalty." },
+      10: { name: "Waterfall", desc: "Everyone starts sipping/penalty at once. You can stop only when the person to your right stops." },
+      J: { name: "Categories", desc: "Pick a category and go around naming items in it. First miss takes a sip/penalty. Use one of the 4 featured categories to keep it spicy!" },
+      Q: { name: "Question Master", desc: "If players answer your questions, they take a sip/penalty. Lasts until the next Queen is drawn." },
+      K: { name: "King’s Cup", desc: "First three Kings add a splash to the Cup; the fourth King drinks it (or a big sip in Gentle mode)." },
+    };
+
+    // --- State ---
+    let deck = [];
+    let drawn = [];
+    let kingsDrawn = 0;
+    let featuredCategories = [];
+    let featuredRules = [];
+
+    // --- Helpers ---
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+    function buildDeck(){
+      const d = [];
+      for(const s of SUITS){
+        for(const r of RANKS){ d.push({rank:r, suit:s}); }
+      }
+      return d;
+    }
+    function shuffle(arr){
+      const a = arr.slice();
+      for(let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]] = [a[j],a[i]];
+      }
+      return a;
+    }
+    function pickN(pool, n){
+      const copy = shuffle(pool);
+      return copy.slice(0, n);
+    }
+
+    function updateCounters(){
+      $('#deckCount').textContent = deck.length;
+      $('#drawnCount').textContent = drawn.length;
+      $('#kingsCount').textContent = `${kingsDrawn} / 4`;
+    }
+
+    function renderCategories(){
+      const box = $('#categories');
+      box.innerHTML = '';
+      featuredCategories.forEach(c => {
+        const chip = document.createElement('button');
+        chip.className = 'px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-sm';
+        chip.textContent = c;
+        chip.title = 'Click to copy';
+        chip.addEventListener('click', () => {
+          navigator.clipboard?.writeText(c);
+          toast(`Copied “${c}”`);
+        });
+        box.appendChild(chip);
+      });
+    }
+
+    function renderRuleIdeas(){
+      const ul = $('#ruleIdeas');
+      ul.innerHTML = '';
+      featuredRules.forEach(r => {
+        const li = document.createElement('li');
+        li.className = 'flex items-start gap-2';
+        li.innerHTML = `<span class="mt-0.5 text-slate-400">•</span><span>${r}</span>`;
+        ul.appendChild(li);
+      });
+    }
+
+    function renderRulesList(){
+      const ul = $('#rulesList');
+      ul.innerHTML = '';
+      const ORDER = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+      ORDER.forEach(r => {
+        const rule = ACTIONS[r];
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="inline-flex w-10 font-semibold text-slate-800">${r}</span> <span class="font-semibold">${rule.name}</span>`;
+        ul.appendChild(li);
+      });
+    }
+
+    function suitColor(s){ return (s==='♥'||s==='♦') ? 'text-rose-500' : 'text-white'; }
+
+    function showCardFront(card){
+      // Update visuals
+      $('#frontRank').textContent = card.rank;
+      $('#frontSuit').textContent = card.suit;
+      $('#frontCornerTL').textContent = card.rank;
+      $('#frontCornerBR').textContent = card.rank;
+      // Corner suits tint white; center suit can be white too
+      $('#frontSuitTL').textContent = card.suit;
+      $('#frontSuitBR').textContent = card.suit;
+    }
+
+    function actionTextFor(card){
+      const gentle = $('#safeToggle').checked;
+      const base = ACTIONS[card.rank];
+      if(!base){ return `No rule for ${card.rank}${card.suit}`; }
+
+      // Gentle phrasing tweaks
+      let desc = base.desc
+        .replaceAll('drink', gentle ? 'sip/penalty' : 'drink')
+        .replaceAll('sips', gentle ? 'sips/penalties' : 'sips')
+        .replaceAll('sip', gentle ? 'sip/penalty' : 'sip');
+
+      if(card.rank==='K'){
+        const remaining = 4 - (kingsDrawn+1);
+        desc += remaining>0 ? ` There will be ${remaining} King(s) left after this.` : ` This is the final King!`;
+      }
+      if(card.rank==='J'){
+        // Highlight categories
+        const opts = featuredCategories.map(c=>`“${c}”`).join(', ');
+        desc += ` Try one of: ${opts}.`;
+      }
+      return `<div class="text-base leading-relaxed">${desc}</div>`;
+    }
+
+    function pushHistory(card){
+      const box = $('#history');
+      const pill = document.createElement('div');
+      pill.className = 'px-3 py-2 rounded-xl bg-slate-100 text-slate-700';
+      pill.textContent = `${card.rank}${card.suit} – ${ACTIONS[card.rank]?.name || ''}`;
+      box.prepend(pill);
+      // cap history
+      while(box.children.length>12){ box.lastElementChild.remove(); }
+    }
+
+    function toast(msg){
+      const t = document.createElement('div');
+      t.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900 text-white text-sm shadow-xl';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.remove(); }, 1400);
+    }
+
+    function flipOnce(){
+      const w = $('#cardWrapper');
+      w.classList.remove('flip');
+      void w.offsetWidth; // reflow
+      w.classList.add('flip');
+    }
+
+    // --- Game Flow ---
+    function newGame(){
+      deck = shuffle(buildDeck());
+      drawn = [];
+      kingsDrawn = 0;
+      featuredCategories = pickN(categoriesPool, 4);
+      featuredRules = pickN(ruleSuggestionsPool, 8);
+      $('#history').innerHTML = '';
+      updateCounters();
+      renderCategories();
+      renderRuleIdeas();
+      renderRulesList();
+      $('#actionText').innerHTML = '<div class="text-slate-600">Tap <b>Draw Card</b> to begin! Jack triggers <b>Categories</b>; use one of the 4 featured picks on the right.</div>';
+      // Show back of card initially
+      $('#card').style.transform = 'rotateY(0deg)';
+      $('#cardWrapper').classList.remove('flip');
+    }
+
+    function drawCard(){
+      if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; }
+      const card = deck.pop();
+      drawn.push(card);
+      if(card.rank==='K'){ kingsDrawn++; }
+      updateCounters();
+      showCardFront(card);
+      $('#actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500">${card.rank}${card.suit} – <b>${ACTIONS[card.rank]?.name||''}</b></div>` + actionTextFor(card);
+      pushHistory(card);
+      flipOnce();
+    }
+
+    function reshuffle(){
+      deck = shuffle(deck.concat(drawn));
+      drawn = [];
+      kingsDrawn = 0; // optional: or keep king count tied to discards only
+      updateCounters();
+      toast('Deck reshuffled');
+    }
+
+    // --- Events ---
+    $('#newGameBtn').addEventListener('click', newGame);
+    $('#drawBtn').addEventListener('click', drawCard);
+    $('#reshuffleBtn').addEventListener('click', reshuffle);
+    $('#resetBtn').addEventListener('click', newGame);
+    $('#rerollCats').addEventListener('click', ()=>{ featuredCategories = pickN(categoriesPool, 4); renderCategories(); toast('New categories loaded'); });
+    $('#rerollRules').addEventListener('click', ()=>{ featuredRules = pickN(ruleSuggestionsPool, 8); renderRuleIdeas(); toast('New rule ideas loaded'); });
+    $('#safeToggle').addEventListener('change', ()=>{
+      if(drawn.length){
+        // Refresh action box text for current card with gentle phrasing applied
+        const last = drawn[drawn.length-1];
+        $('#actionText').innerHTML = `<div class=\"mb-1 text-sm text-slate-500\">${last.rank}${last.suit} – <b>${ACTIONS[last.rank]?.name||''}</b></div>` + actionTextFor(last);
+      }
+    });
+
+    // Kick off
+    newGame();
+  </script>
+</body>
+</html>
+
+
+All set! I dropped a single-file, Vercel-ready web app into the canvas:
+
+10 = Waterfall, Jack = Categories, Ace = Never Have I Ever (as requested).
+
+Each New Game auto-loads 4 fresh categories (click to copy).
+
+A rotating list of New Rule suggestions appears every game (with a Shuffle button).
+
+Mobile-first, pretty card UI, history, king counter, and a gentle/non-alcoholic toggle.
+
+
+How to host with no code on Vercel + GitHub
+
+1. Create a new GitHub repo (e.g., kings-cup-app).
+
+
+2. Add the file from the canvas as index.html at the repo root.
+
+
+3. Push to GitHub.
+
+
+4. On Vercel: New Project → Import GitHub repo → Framework Preset: “Other” → Deploy.
+(It’s a static site; no server needed.)
+
+
+
+Want me to add a dark mode, player names/turn tracker, or a “customize house rules” panel next?
