@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>King's Cup — Party Web App</title>
-  <meta name="description" content="A fun, mobile-friendly King's Cup web app with a modern UI, dynamic Categories on Jack, and New Rule suggestions on King." />
+  <meta name="description" content="Mobile-friendly King's Cup web app. Jack reveals Categories; King suggests New Rules. Shareable link + PWA-ready." />
   <meta name="theme-color" content="#7c3aed" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -82,7 +82,7 @@
       </div>
     </section>
 
-    <!-- Dynamic action text (no heading) -->
+    <!-- Dynamic instruction text (no heading) -->
     <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
       <div id="actionText" class="text-base text-slate-700 dark:text-slate-300"></div>
     </section>
@@ -113,9 +113,6 @@
     </section>
   </main>
 
-  <!-- FX Canvas for Confetti -->
-  <canvas id="fx" class="fixed inset-0 pointer-events-none" style="z-index:50"></canvas>
-
   <!-- Players Sheet (mobile-friendly) -->
   <div id="playersSheet" class="fixed inset-0 z-30 hidden">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
@@ -139,10 +136,6 @@
   </div>
 
   <footer class="max-w-2xl mx-auto px-4 pb-10 text-center text-xs text-slate-500 dark:text-slate-400">
-    Built for friends & laughs. PWA-ready. Shareable game link. 
-  </footer>
-
-  <script> class="max-w-2xl mx-auto px-4 pb-10 text-center text-xs text-slate-500 dark:text-slate-400">
     Built for friends & laughs. PWA-ready. Shareable game link. 
   </footer>
 
@@ -270,33 +263,9 @@
     // Game Flow
     function newGame(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; featuredCategories=pickN(categoriesPool,4); featuredRules=pickN(ruleSuggestionsPool,8); $('#history').innerHTML=''; updateCounters(); renderCategories(); renderRuleIdeas(); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap <b>Draw Card</b> to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>'; $('#card').style.transform='rotateY(0deg)'; $('#cardWrapper').classList.remove('flip'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
 
-    function drawCard(){
-      // Haptic tap on every draw
-      haptic('draw');
-      if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; }
-      const card=deck.pop(); drawn.push(card);
-      if(card.rank==='K'){ kingsDrawn++; }
-      updateCounters(); showCardFront(card);
-      const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:'';
-      $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card);
-      pushHistory(card); flipOnce();
-
-      // Per-rank effects
-      if(card.rank==='J'){ haptic('jack'); showPanel($('#panelCategories')); renderCategories(); hidePanel($('#panelRuleIdeas')); }
-      else if(card.rank==='K'){
-        haptic('king'); showPanel($('#panelRuleIdeas')); renderRuleIdeas();
-        // Confetti from card position
-        const r = document.getElementById('cardWrapper').getBoundingClientRect();
-        const x = r.left + r.width/2; const y = r.top + r.height/2 + window.scrollY;
-        spawnConfetti(x, y, { count: kingsDrawn===4 ? 220 : 140 });
-      } else {
-        hidePanel($('#panelCategories'));
-      }
-
-      if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
-    } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
+    function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
       // Dynamic panels
-      if(card.rank==='J'){ showPanel($('#panelCategories')); renderCategories(); }
+      if(card.rank==='J'){ showPanel($('#panelCategories')); renderCategories(); hidePanel($('#panelRuleIdeas')); }
       else if(card.rank==='K'){ showPanel($('#panelRuleIdeas')); renderRuleIdeas(); }
       else { hidePanel($('#panelCategories')); }
     }
@@ -322,67 +291,8 @@
     $('#shareBtn').addEventListener('click', doShare);
     $('#installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('#installBtn').classList.add('hidden'); });
 
-    // --- Haptics ---
-    function haptic(kind){
-      if(!('vibrate' in navigator)) return;
-      if(kind==='king') navigator.vibrate([20,40,20]);
-      else if(kind==='jack') navigator.vibrate([16,10,16]);
-      else navigator.vibrate(12);
-    }
-
-    // --- Confetti FX ---
-    const fx = document.getElementById('fx');
-    const fctx = fx.getContext('2d');
-    let particles = []; let animId = null; let DPR = Math.max(1, window.devicePixelRatio||1);
-    function sizeFx(){
-      const w = window.innerWidth, h = window.innerHeight;
-      fctx.setTransform(1,0,0,1,0,0);
-      fx.width = Math.floor(w * DPR); fx.height = Math.floor(h * DPR);
-      fctx.setTransform(DPR,0,0,DPR,0,0);
-    }
-    function spawnConfetti(x,y, opts={}){
-      const count = opts.count || 140;
-      const spread = opts.spread || Math.PI*2;
-      const colors = opts.colors || ['#fde047','#60a5fa','#f472b6','#34d399','#f87171','#a78bfa'];
-      for(let i=0;i<count;i++){
-        const angle = Math.random()*spread - spread/2;
-        const speed = 3 + Math.random()*5;
-        particles.push({
-          x, y,
-          vx: Math.cos(angle)*speed,
-          vy: Math.sin(angle)*speed - 3,
-          g: 0.15 + Math.random()*0.1,
-          life: 60 + Math.random()*40,
-          size: 3 + Math.random()*4,
-          rot: Math.random()*Math.PI*2,
-          vr: (Math.random()-0.5)*0.2,
-          color: colors[Math.floor(Math.random()*colors.length)],
-          shape: Math.random()<0.5?'rect':'circle'
-        });
-      }
-      if(!animId) loop();
-    }
-    function loop(){
-      animId = requestAnimationFrame(loop);
-      fctx.clearRect(0,0,fx.width/DPR, fx.height/DPR);
-      for(let i=particles.length-1;i>=0;i--){
-        const p = particles[i];
-        p.vy += p.g; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= 1;
-        fctx.save(); fctx.translate(p.x, p.y); fctx.rotate(p.rot);
-        fctx.fillStyle = p.color;
-        if(p.shape==='rect') fctx.fillRect(-p.size, -p.size, p.size*2, p.size*2);
-        else { fctx.beginPath(); fctx.arc(0,0,p.size,0,Math.PI*2); fctx.fill(); }
-        fctx.restore();
-        if(p.life<=0 || p.y>window.innerHeight+20) particles.splice(i,1);
-      }
-      if(!particles.length){ cancelAnimationFrame(animId); animId=null; }
-    }
-    window.addEventListener('resize', sizeFx);
-    sizeFx();
-
     // Init
     initTheme(); registerSW(); loadPlayers(); newGame(); loadFromUrl();
-  </script>
   </script>
 </body>
 </html>
