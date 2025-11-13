@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>King's Cup — Party Web App</title>
-  <meta name="description" content="Mobile-friendly King's Cup web app. Tap the card to draw. Jack reveals Categories; King suggests New Rules. Shareable link + PWA-ready." />
+  <meta name="description" content="Mobile-friendly King's Cup web app. Tap the card to draw. Jack reveals Categories; King suggests New Rules. Shareable link. Multiplayer is a Pro feature (greyed out)." />
   <meta name="theme-color" content="#7c3aed" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,7 +38,19 @@
     /* Pop-in for history minis */
     @keyframes pop{ 0%{ transform: scale(.85); opacity:0; } 100%{ transform: scale(1); opacity:1; } }
     .pop-in{ animation: pop 180ms ease-out; }
+
+    /* Presence avatars (kept for Pro; hidden by default) */
+    .avatar{ width:28px; height:28px; border-radius:9999px; display:inline-grid; place-items:center; font-weight:700; font-size:12px; color:white; position:relative; box-shadow:0 1px 2px rgba(0,0,0,.25); }
+    .avatar .dot{ position:absolute; right:-2px; bottom:-2px; width:10px; height:10px; border-radius:9999px; border:2px solid white; background:#10b981; }
+    .avatar.offline .dot{ background:#9ca3af; }
   </style>
+  <!-- Set Pro flag (false by default). Turning this on unlocks the multiplayer UI. -->
+  <script>window.KC_PRO = !!localStorage.getItem('kc_party_pass');</script>
+  <script>window.KC_PRO = !!localStorage.getItem('kc_party_pass');
+  // OPTIONAL: paste your Stripe Payment Link URLs here (or set them at runtime before init)
+  window.STRIPE_LINK_PARTY_PASS = window.STRIPE_LINK_PARTY_PASS || ""; // e.g., https://buy.stripe.com/... (48h pass)
+  window.STRIPE_LINK_LIFETIME  = window.STRIPE_LINK_LIFETIME  || ""; // e.g., https://buy.stripe.com/... (lifetime)
+  </script>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
   <!-- Header -->
@@ -46,6 +58,10 @@
     <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
       <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-white font-black">K</div>
       <h1 class="flex-1 text-lg font-extrabold tracking-tight">King's Cup</h1>
+      <span id="roomBadge" class="hidden text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">ROOM: <b id="roomCodeText">PRO</b></span>
+      <div id="presenceRow" class="hidden md:flex items-center gap-1"></div>
+      <!-- Room button is greyed out if not Pro -->
+      <button id="roomBtn" class="icon-btn bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-60" title="Multiplayer (Pro)">🧩</button>
       <button id="playersBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Players">👥</button>
       <button id="shareBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Share">🔗</button>
       <button id="installBtn" class="hidden icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Install">⬇️</button>
@@ -126,6 +142,36 @@
       <h3 class="font-semibold">History</h3>
       <div id="history" class="mt-3 grid grid-cols-6 sm:grid-cols-8 gap-2"></div>
     </section>
+      <!-- Pro Upsell Sheet (Party Pass) -->
+    <div id="proSheet" class="fixed inset-0 z-40 hidden">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+      <div class="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-5 space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-lg font-extrabold">Party Pass (Pro)</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-300">Unlock realtime rooms + unlimited rule ideas + custom faces + saved player lists.</p>
+          </div>
+          <button id="proClose" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">✕</button>
+        </div>
+        <ul class="grid gap-2 text-sm text-slate-700 dark:text-slate-300">
+          <li class="flex items-center gap-2"><span>🧩</span><span>Host & join live rooms (Jackbox-style)</span></li>
+          <li class="flex items-center gap-2"><span>🎨</span><span>Upload custom card faces</span></li>
+          <li class="flex items-center gap-2"><span>💡</span><span>Shuffle premium “New Rule” packs</span></li>
+          <li class="flex items-center gap-2"><span>👥</span><span>Save players & turn order</span></li>
+        </ul>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <button id="buyPassBtn" class="w-full px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold">Get 48‑hour Party Pass</button>
+          <button id="buyLifetimeBtn" class="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Unlock Lifetime Pro</button>
+        </div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">
+          <p>Tip: In Stripe Payment Link, set <b>Post‑payment redirect</b> to <code>?pro=1</code> on your domain so unlock happens automatically.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="redeemCode" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" placeholder="Enter code (DEV)" />
+          <button id="redeemBtn" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Redeem</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- Players Sheet (mobile-friendly) -->
@@ -150,9 +196,60 @@
     </div>
   </div>
 
+  <!-- Room Sheet (Pro-locked) -->
+  <div id="roomSheet" class="fixed inset-0 z-30 hidden">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <div class="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="font-bold">Room (Pro)</h2>
+        <button id="roomClose" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">✕</button>
+      </div>
+      <div class="text-sm text-slate-600 dark:text-slate-300">Multiplayer rooms are a <b>Pro</b> feature. Unlock to create or join rooms.</div>
+    </div>
+  </div>
+
   <footer class="max-w-2xl mx-auto px-4 pb-10 text-center text-xs text-slate-500 dark:text-slate-400">
-    Built for friends & laughs. PWA-ready. Shareable game link. 
+    Built for friends & laughs. Works offline. <span class="opacity-70">Multiplayer is Pro (coming soon).</span>
   </footer>
+
+  <script>
+    // --- Lightweight metrics (local only) ---
+    function metrics(event, data={}){
+      try{
+        const key='kc_metrics';
+        const arr=JSON.parse(localStorage.getItem(key)||'[]');
+        arr.push({t:Date.now(),e:event,d:data});
+        localStorage.setItem(key, JSON.stringify(arr));
+        console.debug('[kc]', event, data);
+      }catch{}
+    }
+
+    // Unlock helpers
+    function enableProUI(){
+      window.KC_PRO = true;
+      localStorage.setItem('kc_party_pass','1');
+      const roomBtn = document.getElementById('roomBtn');
+      roomBtn.classList.remove('cursor-not-allowed','opacity-60','text-slate-400');
+      roomBtn.classList.add('hover:bg-slate-200','dark:hover:bg-slate-700');
+      roomBtn.title='Room';
+      roomBtn.replaceWith(roomBtn.cloneNode(true)); // remove old listeners
+      const newBtn = document.getElementById('roomBtn');
+      newBtn.addEventListener('click', ()=> document.getElementById('roomSheet').classList.remove('hidden'));
+      document.getElementById('roomBadge').classList.remove('hidden');
+      toast('Party Pass unlocked!');
+      hideProSheet?.();
+      metrics('unlock', { source: 'ui' });
+    }
+    function unlockPro(source){ enableProUI(); metrics('unlock', { source }); }
+    function checkUnlockFromURL(){
+      const u=new URL(location.href);
+      if(u.searchParams.get('pro')==='1' || u.searchParams.get('party')==='1'){
+        unlockPro('redirect');
+        u.searchParams.delete('pro'); u.searchParams.delete('party');
+        history.replaceState({}, '', u.pathname + (u.search ? ('?'+u.searchParams.toString()) : '') + u.hash);
+      }
+    }
+  </script>
 
   <script>
     // --- Data & Rules ---
@@ -176,7 +273,7 @@
     };
 
     // Optional custom card face images (replace with your paths)
-    const CARD_IMAGES = { front: "", back: "" }; // e.g., "/cards/front.png", "/cards/back.png"
+    const CARD_IMAGES = { front: "", back: "" };
     function applyCardImages(){
       const r = document.documentElement.style;
       r.setProperty('--front-img', CARD_IMAGES.front ? `url('${CARD_IMAGES.front}')` : 'none');
@@ -220,7 +317,7 @@
       "Swap seats with someone of your choice"
     ];
 
-    // Active state
+    // Active state (local mode)
     let deck = [];
     let drawn = [];
     let kingsDrawn = 0;
@@ -303,10 +400,10 @@
     async function doShare(){ const url=shareUrl(); try{ if(navigator.share){ await navigator.share({title:"Play King's Cup", url}); } else { await navigator.clipboard?.writeText(url); toast('Link copied'); } }catch{ await navigator.clipboard?.writeText(url); toast('Link copied'); } }
     function loadFromUrl(){ const s=new URL(location.href).searchParams.get('s'); if(!s) return; try{ applyState(JSON.parse(base64urlDecode(s))); }catch{} }
 
-    // Game Flow
+    // Game Flow (LOCAL)
     function newGame(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; featuredCategories=pickN(categoriesPool,4); featuredRules=pickN(ruleSuggestionsPool,8); $('#history').innerHTML=''; updateCounters(); renderCategories(); renderRuleIdeas(); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>'; $('#card').style.transform='rotateY(0deg)'; $('#cardWrapper').classList.remove('flip'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
 
-    function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); const w = document.getElementById('cardWrapper'); w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true}); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
+    function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class=\"text-slate-500 dark:text-slate-400\">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class=\"mb-1 text-sm text-slate-500 dark:text-slate-400\">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); const w = document.getElementById('cardWrapper'); w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true}); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
       // Dynamic panels
       if(card.rank==='J'){ showPanel(document.getElementById('panelCategories')); renderCategories(); hidePanel(document.getElementById('panelRuleIdeas')); }
       else if(card.rank==='K'){ showPanel(document.getElementById('panelRuleIdeas')); renderRuleIdeas(); hidePanel(document.getElementById('panelCategories')); }
@@ -319,18 +416,15 @@
       if(last.rank==='K' && kingsDrawn>0) kingsDrawn--;
       deck.push(last); // put it back on top
       updateCounters();
-      // remove latest history card
       const h = $('#history'); if(h.firstElementChild) h.removeChild(h.firstElementChild);
-      // restore previous state
       const prev = drawn[drawn.length-1];
       if(prev){
         showCardFront(prev);
-        $('#actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${prev.rank}${prev.suit} – <b>${DEFAULT_RULES[prev.rank]?.name||''}</b></div>` + actionTextFor(prev);
+        $('#actionText').innerHTML = `<div class=\"mb-1 text-sm text-slate-500 dark:text-slate-400\">${prev.rank}${prev.suit} – <b>${DEFAULT_RULES[prev.rank]?.name||''}</b></div>` + actionTextFor(prev);
         if(prev.rank==='J'){ showPanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
         else if(prev.rank==='K'){ showPanel($('#panelRuleIdeas')); hidePanel($('#panelCategories')); }
         else { hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
       } else {
-        // back to start
         $('#frontRank').textContent='?'; $('#frontSuit').textContent='♠'; $('#frontCornerTL').textContent='★'; $('#frontCornerBR').textContent='★'; $('#frontSuitTL').textContent='♣'; $('#frontSuitBR').textContent='♣';
         $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin.</span>';
         hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas'));
@@ -338,14 +432,12 @@
       if(players.length) prevTurn();
     }
 
-    function reshuffle(){ deck=shuffle(deck.concat(drawn)); drawn=[]; kingsDrawn=0; updateCounters(); toast('Deck reshuffled'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Deck reshuffled. Tap to draw.</span>'; }
-
-    // Events
+    // Events (Local)
     document.getElementById('backBtn').addEventListener('click', backOne);
     document.getElementById('cardWrapper').addEventListener('click', drawCard);
     document.getElementById('cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); drawCard(); }});
-    document.getElementById('reshuffleBtn').addEventListener('click', reshuffle);
-    document.getElementById('resetBtn').addEventListener('click', newGame);
+    document.getElementById('reshuffleBtn').addEventListener('click', ()=> newGame());
+    document.getElementById('resetBtn').addEventListener('click', ()=> newGame());
     document.getElementById('safeToggle').addEventListener('change', ()=>{ if(drawn.length){ const last=drawn[drawn.length-1]; document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last); } });
     document.getElementById('rerollCats').addEventListener('click', ()=>{ featuredCategories=pickN(categoriesPool,4); renderCategories(); toast('Fresh categories'); });
     document.getElementById('rerollRules').addEventListener('click', ()=>{ featuredRules=pickN(ruleSuggestionsPool,8); renderRuleIdeas(); toast('New ideas'); });
@@ -361,9 +453,125 @@
     document.getElementById('shareBtn').addEventListener('click', doShare);
     document.getElementById('installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; document.getElementById('installBtn').classList.add('hidden'); });
 
+    // Room button: Pro gate
+    const roomBtn = document.getElementById('roomBtn');
+    const proSheet = document.getElementById('proSheet');
+    const proClose = document.getElementById('proClose');
+
+    function showProSheet(){ proSheet.classList.remove('hidden'); metrics('paywall_open'); }
+    function hideProSheet(){ proSheet.classList.add('hidden'); }
+
+    if(!window.KC_PRO){
+      roomBtn.classList.add('cursor-not-allowed','opacity-60','text-slate-400');
+      roomBtn.addEventListener('click', showProSheet);
+      document.getElementById('roomBadge').classList.add('hidden');
+      document.getElementById('presenceRow').classList.add('hidden');
+    } else {
+      enableProUI();
+    }
+
+    proClose?.addEventListener('click', hideProSheet);
+
+    // Buy buttons
+    function openCheckout(link){
+      if(!link){ toast('Add your Stripe Payment Link URL'); return; }
+      metrics('checkout_start', { plan: 'unknown' });
+      window.open(link, '_blank');
+    }
+    document.getElementById('buyPassBtn')?.addEventListener('click', ()=>{ metrics('checkout_start', { plan: 'party_pass' }); openCheckout(window.STRIPE_LINK_PARTY_PASS); });
+    document.getElementById('buyLifetimeBtn')?.addEventListener('click', ()=>{ metrics('checkout_start', { plan: 'lifetime' }); openCheckout(window.STRIPE_LINK_LIFETIME); });
+
+    // Redeem (DEV/testing)
+    document.getElementById('redeemBtn')?.addEventListener('click', ()=>{
+      const code = (document.getElementById('redeemCode').value||'').trim();
+      if(!code) return toast('Enter a code');
+      // simple demo: any non-empty code unlocks
+      unlockPro('code');
+    });
+
     // Init
-    function init(){ initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame(); loadFromUrl(); }
+    function init(){
+      initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame();
+      checkUnlockFromURL(); // auto-unlock if redirected from Stripe
+    }
     init();
+  </script>
+
+  <!-- Realtime (Firebase) — kept but fully disabled unless KC_PRO=true -->
+  <script type="module">
+    if(!window.KC_PRO){ console.info('[KC] Realtime disabled — Pro only.'); }
+    else {
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+      import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+      import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+      const cfg = window.FIREBASE_CONFIG;
+      if(!cfg){ console.info('[KC] No FIREBASE_CONFIG; realtime idle.'); }
+      else {
+        const app = initializeApp(cfg);
+        const auth = getAuth(app);
+        const db   = getFirestore(app);
+        await signInAnonymously(auth).catch(()=>{});
+
+        let ROOM_ID = null;
+        function randCode(len=5){ return Array.from(crypto.getRandomValues(new Uint8Array(len))).map(n => "ABCDEFGHJKLMNPQRSTUVWXYZ"[n%25]).join(""); }
+
+        async function createRoom({name}){
+          const code = randCode(5);
+          ROOM_ID = code;
+          const ref = doc(db, 'rooms', ROOM_ID);
+          await setDoc(ref, {
+            createdAt: Date.now(),
+            hostUid: auth.currentUser?.uid || 'host',
+            code,
+            players: [{ uid: auth.currentUser?.uid || 'host', name, lastSeen: Date.now() }],
+            state: {
+              deck: (function(){ const d=[]; for(const s of ["♠","♥","♦","♣"]) for(const r of ["A","2","3","4","5","6","7","8","9","10","J","Q","K"]) d.push({rank:r,suit:s}); return d; })().sort(()=>Math.random()-.5),
+              drawn: [], kingsDrawn: 0,
+              featuredCategories: [],
+              featuredRules: [],
+              panels: { showCats:false, showRules:false },
+              safe: true, turnIndex: 0, clockwise: true
+            }
+          });
+          document.getElementById('roomBadge').classList.remove('hidden');
+          document.getElementById('roomCodeText').textContent = code;
+          subscribe();
+          return code;
+        }
+
+        async function joinRoom({code, name}){
+          ROOM_ID = code.toUpperCase();
+          const ref = doc(db, 'rooms', ROOM_ID);
+          const snap = await getDoc(ref);
+          if(!snap.exists()) throw new Error('Room not found');
+          const data = snap.data();
+          const players = (data.players||[]).filter(p=>p.uid!==auth.currentUser?.uid);
+          players.push({ uid: auth.currentUser?.uid || Math.random().toString(36).slice(2), name, lastSeen: Date.now() });
+          await updateDoc(ref, { players });
+          document.getElementById('roomBadge').classList.remove('hidden');
+          document.getElementById('roomCodeText').textContent = ROOM_ID;
+          subscribe();
+        }
+
+        function subscribe(){
+          const ref = doc(db, 'rooms', ROOM_ID);
+          onSnapshot(ref, (snap)=>{
+            if(!snap.exists()) return;
+            const data = snap.data();
+            // You can map remote state to UI here when Pro is enabled
+          });
+        }
+
+        // Hook up basic create/join if you turn Pro on
+        const sheet = document.getElementById('roomSheet');
+        if(sheet){
+          const close = document.getElementById('roomClose');
+          close?.addEventListener('click', ()=> sheet.classList.add('hidden'));
+        }
+        window.realtime = { createRoom, joinRoom };
+      }
+    }
   </script>
 </body>
 </html>
