@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>King's Cup — Party Web App</title>
-  <meta name="description" content="Mobile-friendly King's Cup web app. Tap the card to draw. Jack reveals Categories; King suggests New Rules. Shareable link. Multiplayer is a Pro feature (greyed out)." />
+  <meta name="description" content="Mobile-friendly King's Cup web app. Tap the card to draw. Jack reveals Categories; King suggests New Rules. Shareable link. Optional realtime rooms (Pro)." />
   <meta name="theme-color" content="#7c3aed" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
     @keyframes pop{ 0%{ transform: scale(.85); opacity:0; } 100%{ transform: scale(1); opacity:1; } }
     .pop-in{ animation: pop 180ms ease-out; }
 
-    /* Presence avatars (kept for Pro; hidden by default) */
+    /* Presence avatars */
     .avatar{ width:28px; height:28px; border-radius:9999px; display:inline-grid; place-items:center; font-weight:700; font-size:12px; color:white; position:relative; box-shadow:0 1px 2px rgba(0,0,0,.25); }
     .avatar .dot{ position:absolute; right:-2px; bottom:-2px; width:10px; height:10px; border-radius:9999px; border:2px solid white; background:#10b981; }
     .avatar.offline .dot{ background:#9ca3af; }
   </style>
-  <!-- Set Pro flag (false by default). Turning this on unlocks the multiplayer UI. -->
-  <script>window.KC_PRO = !!localStorage.getItem('kc_party_pass');</script>
-  <script>window.KC_PRO = !!localStorage.getItem('kc_party_pass');
-  // OPTIONAL: paste your Stripe Payment Link URLs here (or set them at runtime before init)
-  window.STRIPE_LINK_PARTY_PASS = window.STRIPE_LINK_PARTY_PASS || ""; // e.g., https://buy.stripe.com/... (48h pass)
-  window.STRIPE_LINK_LIFETIME  = window.STRIPE_LINK_LIFETIME  || ""; // e.g., https://buy.stripe.com/... (lifetime)
+
+  <script>
+    // Pro toggle (Party Pass). Stripe links are optional.
+    window.KC_PRO = !!localStorage.getItem('kc_party_pass');
+    window.STRIPE_LINK_PARTY_PASS = window.STRIPE_LINK_PARTY_PASS || ""; // e.g., https://buy.stripe.com/...
+    window.STRIPE_LINK_LIFETIME  = window.STRIPE_LINK_LIFETIME  || "";
   </script>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -58,10 +58,9 @@
     <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
       <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-white font-black">K</div>
       <h1 class="flex-1 text-lg font-extrabold tracking-tight">King's Cup</h1>
-      <span id="roomBadge" class="hidden text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">ROOM: <b id="roomCodeText">PRO</b></span>
+      <span id="roomBadge" class="hidden text-xs px-2.5 py-1 rounded-full bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200">ROOM: <b id="roomCodeText">LOCAL</b></span>
       <div id="presenceRow" class="hidden md:flex items-center gap-1"></div>
-      <!-- Room button is greyed out if not Pro -->
-      <button id="roomBtn" class="icon-btn bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-60" title="Multiplayer (Pro)">🧩</button>
+      <button id="roomBtn" class="icon-btn bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-60 text-slate-400" title="Room (Pro)">🧩</button>
       <button id="playersBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Players">👥</button>
       <button id="shareBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Share">🔗</button>
       <button id="installBtn" class="hidden icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Install">⬇️</button>
@@ -142,7 +141,8 @@
       <h3 class="font-semibold">History</h3>
       <div id="history" class="mt-3 grid grid-cols-6 sm:grid-cols-8 gap-2"></div>
     </section>
-      <!-- Pro Upsell Sheet (Party Pass) -->
+
+    <!-- Pro Upsell Sheet (Party Pass) -->
     <div id="proSheet" class="fixed inset-0 z-40 hidden">
       <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
       <div class="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-5 space-y-4">
@@ -164,7 +164,7 @@
           <button id="buyLifetimeBtn" class="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Unlock Lifetime Pro</button>
         </div>
         <div class="text-xs text-slate-500 dark:text-slate-400">
-          <p>Tip: In Stripe Payment Link, set <b>Post‑payment redirect</b> to <code>?pro=1</code> on your domain so unlock happens automatically.</p>
+          <p>Tip: In Stripe Payment Link, set <b>Post‑payment redirect</b> to <code>?pro=1</code> so unlock happens automatically.</p>
         </div>
         <div class="flex items-center gap-2">
           <input id="redeemCode" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" placeholder="Enter code (DEV)" />
@@ -196,62 +196,118 @@
     </div>
   </div>
 
-  <!-- Room Sheet (Pro-locked) -->
+  <!-- Room Sheet (hidden until Pro) -->
   <div id="roomSheet" class="fixed inset-0 z-30 hidden">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
     <div class="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 space-y-3">
       <div class="flex items-center justify-between">
-        <h2 class="font-bold">Room (Pro)</h2>
+        <h2 class="font-bold">Room</h2>
         <button id="roomClose" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">✕</button>
       </div>
-      <div class="text-sm text-slate-600 dark:text-slate-300">Multiplayer rooms are a <b>Pro</b> feature. Unlock to create or join rooms.</div>
+      <div id="roomStatus" class="text-sm text-slate-600 dark:text-slate-300">Mode: <b id="netMode">Local</b></div>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <h3 class="font-semibold mb-2">Create</h3>
+          <input id="hostName" class="w-full mb-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" placeholder="Your name" />
+          <button id="createRoomBtn" class="w-full px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white">Create room</button>
+          <div id="createHint" class="mt-2 text-xs text-slate-500">Requires Firebase config. Falls back to Local if absent.</div>
+        </div>
+        <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <h3 class="font-semibold mb-2">Join</h3>
+          <input id="joinName" class="w-full mb-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" placeholder="Your name" />
+          <input id="joinCode" class="w-full mb-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 uppercase" placeholder="ROOM CODE" />
+          <button id="joinRoomBtn" class="w-full px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">Join room</button>
+        </div>
+      </div>
+      <div id="activeRoomBox" class="hidden p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between">
+          <div>Room code: <b id="activeRoomCode">—</b> • Host: <b id="activeRoomHost">—</b></div>
+          <div class="flex items-center gap-2">
+            <button id="copyRoomLink" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Copy Link</button>
+            <button id="leaveRoomBtn" class="px-2 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200">Leave</button>
+          </div>
+        </div>
+        <div id="roomPlayers" class="mt-2 flex flex-wrap items-center gap-2"></div>
+        <div id="roomStats" class="mt-2 text-xs text-slate-500 dark:text-slate-400"></div>
+      </div>
     </div>
   </div>
 
   <footer class="max-w-2xl mx-auto px-4 pb-10 text-center text-xs text-slate-500 dark:text-slate-400">
-    Built for friends & laughs. Works offline. <span class="opacity-70">Multiplayer is Pro (coming soon).</span>
+    Built for friends & laughs. Works offline. Realtime rooms optional (Pro).
   </footer>
 
   <script>
     // --- Lightweight metrics (local only) ---
     function metrics(event, data={}){
-      try{
-        const key='kc_metrics';
-        const arr=JSON.parse(localStorage.getItem(key)||'[]');
-        arr.push({t:Date.now(),e:event,d:data});
-        localStorage.setItem(key, JSON.stringify(arr));
-        console.debug('[kc]', event, data);
-      }catch{}
+      try{ const key='kc_metrics'; const arr=JSON.parse(localStorage.getItem(key)||'[]'); arr.push({t:Date.now(),e:event,d:data}); localStorage.setItem(key, JSON.stringify(arr)); }catch{}
     }
 
-    // Unlock helpers
-    function enableProUI(){
-      window.KC_PRO = true;
-      localStorage.setItem('kc_party_pass','1');
-      const roomBtn = document.getElementById('roomBtn');
-      roomBtn.classList.remove('cursor-not-allowed','opacity-60','text-slate-400');
-      roomBtn.classList.add('hover:bg-slate-200','dark:hover:bg-slate-700');
-      roomBtn.title='Room';
-      roomBtn.replaceWith(roomBtn.cloneNode(true)); // remove old listeners
-      const newBtn = document.getElementById('roomBtn');
-      newBtn.addEventListener('click', ()=> document.getElementById('roomSheet').classList.remove('hidden'));
-      document.getElementById('roomBadge').classList.remove('hidden');
-      toast('Party Pass unlocked!');
-      hideProSheet?.();
-      metrics('unlock', { source: 'ui' });
-    }
-    function unlockPro(source){ enableProUI(); metrics('unlock', { source }); }
-    function checkUnlockFromURL(){
-      const u=new URL(location.href);
-      if(u.searchParams.get('pro')==='1' || u.searchParams.get('party')==='1'){
-        unlockPro('redirect');
-        u.searchParams.delete('pro'); u.searchParams.delete('party');
-        history.replaceState({}, '', u.pathname + (u.search ? ('?'+u.searchParams.toString()) : '') + u.hash);
-      }
-    }
-  </script>
+    // --- Data & Rules ---
+    const SUITS = ["♠", "♥", "♦", "♣"]; // display only
+    const RANKS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 
-  <script>
+    const DEFAULT_RULES = {
+      A: { name: "Never Have I Ever", desc: "Each player holds up 3 fingers (or 5). The drawer starts: say something you’ve never done. Anyone who has, takes a sip/penalty and lowers a finger." },
+      2: { name: "You", desc: "Choose someone to take a sip/penalty." },
+      3: { name: "Me", desc: "You take a sip/penalty." },
+      4: { name: "Floor", desc: "Last to touch the floor takes a sip/penalty." },
+      5: { name: "Guys", desc: "All who identify as guys take a sip/penalty. (Alt: anyone wearing jeans)" },
+      6: { name: "Girls", desc: "All who identify as girls take a sip/penalty. (Alt: anyone with glasses)" },
+      7: { name: "Heaven", desc: "Last to point upward takes a sip/penalty." },
+      8: { name: "Mate", desc: "Pick a mate; you two take sips/penalties together for the rest of the game." },
+      9: { name: "Rhyme", desc: "Say a word; go around rhyming it. First stumble or repeat takes a sip/penalty." },
+      10: { name: "Waterfall", desc: "Everyone starts sipping/penalty at once. You can stop only when the person to your right stops." },
+      J: { name: "Categories", desc: "Pick a category and go around naming items in it. First miss takes a sip/penalty." },
+      Q: { name: "Question Master", desc: "If players answer your questions, they take a sip/penalty. Lasts until the next Queen is drawn." },
+      K: { name: "King’s Cup", desc: "First three Kings add a splash to the Cup; the fourth King drinks it (or a big sip in Gentle mode)." },
+    };
+
+    // Optional custom card face images (replace with your paths)
+    const CARD_IMAGES = { front: "", back: "" }; // e.g., "/cards/front.png", "/cards/back.png"
+    function applyCardImages(){
+      const r = document.documentElement.style;
+      r.setProperty('--front-img', CARD_IMAGES.front ? `url('${CARD_IMAGES.front}')` : 'none');
+      r.setProperty('--back-img', CARD_IMAGES.back ? `url('${CARD_IMAGES.back}')` : 'none');
+    }
+
+    const ruleEmoji = { A:'🤞', 2:'👉', 3:'🙋', 4:'🧎', 5:'👥', 6:'🎀', 7:'☝️', 8:'🧑‍🤝‍🧑', 9:'🎤', 10:'🌊', J:'🗂️', Q:'❓', K:'👑' };
+
+    const categoriesPool = [
+      "Dog breeds","Pizza toppings","Superheroes","Disney/Pixar movies","Board games",
+      "Countries in Europe","NBA teams","Car brands","Programming languages","Ice cream flavors",
+      "Video game characters","Musical instruments","Shapes","Fruits","Vegetables","Pokemon",
+      "U.S. states / Canadian provinces","Star Wars characters","Streaming shows","Coffee drinks",
+      "Chocolate brands","Cartoon characters","Mythical creatures","Sportswear brands","Fast food chains",
+      "Rappers","Pop stars","Bird species","Dinosaurs","Household chores","Things that are red",
+      "Mountains / hikes","Famous painters","Book genres","Breakfast foods","Types of pasta",
+      "Dog tricks","Hobbies","School subjects","Flowers","Sea creatures","Cookie types","Languages",
+      "Cities with a subway","Animals with stripes","Toys","Camping items","Card games","Weather words"
+    ];
+
+    const ruleSuggestionsPool = [
+      "No first names (use nicknames only)",
+      "No pointing (use elbows)",
+      "Speak in a movie quote once per turn",
+      "Tiny T-Rex arms while talking",
+      "British accent until your next draw",
+      "No using the word ‘sip’",
+      "Reverse the turn order",
+      "Clap before you speak",
+      "Thumb Master: last to put thumb on table sips",
+      "No swearing",
+      "Rhyme every sentence end",
+      "Stand to speak",
+      "No looking at the card when you draw (someone else reads it)",
+      "Only whispering",
+      "Raise pinky when sipping",
+      "No touching hair",
+      "Questions must be answered with a question",
+      "Talk like a pirate",
+      "Ban a letter (e.g., no ‘S’ words)",
+      "Swap seats with someone of your choice"
+    ];
+
     // --- AI Helpers (client) ---
     async function aiFetch(endpoint, body, opts={}){
       const { cacheKey, ttlMs = 5*60*1000 } = opts;
@@ -300,72 +356,7 @@
       }
     }
 
-    // --- Data & Rules ---
-    const SUITS = ["♠", "♥", "♦", "♣"]; // display only
-    const RANKS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
-
-    const DEFAULT_RULES = {
-      A: { name: "Never Have I Ever", desc: "Each player holds up 3 fingers (or 5). The drawer starts: say something you’ve never done. Anyone who has, takes a sip/penalty and lowers a finger." },
-      2: { name: "You", desc: "Choose someone to take a sip/penalty." },
-      3: { name: "Me", desc: "You take a sip/penalty." },
-      4: { name: "Floor", desc: "Last to touch the floor takes a sip/penalty." },
-      5: { name: "Guys", desc: "All who identify as guys take a sip/penalty. (Alt: anyone wearing jeans)" },
-      6: { name: "Girls", desc: "All who identify as girls take a sip/penalty. (Alt: anyone with glasses)" },
-      7: { name: "Heaven", desc: "Last to point upward takes a sip/penalty." },
-      8: { name: "Mate", desc: "Pick a mate; you two take sips/penalties together for the rest of the game." },
-      9: { name: "Rhyme", desc: "Say a word; go around rhyming it. First stumble or repeat takes a sip/penalty." },
-      10: { name: "Waterfall", desc: "Everyone starts sipping/penalty at once. You can stop only when the person to your right stops." },
-      J: { name: "Categories", desc: "Pick a category and go around naming items in it. First miss takes a sip/penalty." },
-      Q: { name: "Question Master", desc: "If players answer your questions, they take a sip/penalty. Lasts until the next Queen is drawn." },
-      K: { name: "King’s Cup", desc: "First three Kings add a splash to the Cup; the fourth King drinks it (or a big sip in Gentle mode)." },
-    };
-
-    // Optional custom card face images (replace with your paths)
-    const CARD_IMAGES = { front: "", back: "" };
-    function applyCardImages(){
-      const r = document.documentElement.style;
-      r.setProperty('--front-img', CARD_IMAGES.front ? `url('${CARD_IMAGES.front}')` : 'none');
-      r.setProperty('--back-img', CARD_IMAGES.back ? `url('${CARD_IMAGES.back}')` : 'none');
-    }
-
-    const ruleEmoji = { A:'🤞', 2:'👉', 3:'🙋', 4:'🧎', 5:'👥', 6:'🎀', 7:'☝️', 8:'🧑‍🤝‍🧑', 9:'🎤', 10:'🌊', J:'🗂️', Q:'❓', K:'👑' };
-
-    const categoriesPool = [
-      "Dog breeds","Pizza toppings","Superheroes","Disney/Pixar movies","Board games",
-      "Countries in Europe","NBA teams","Car brands","Programming languages","Ice cream flavors",
-      "Video game characters","Musical instruments","Shapes","Fruits","Vegetables","Pokemon",
-      "U.S. states / Canadian provinces","Star Wars characters","Streaming shows","Coffee drinks",
-      "Chocolate brands","Cartoon characters","Mythical creatures","Sportswear brands","Fast food chains",
-      "Rappers","Pop stars","Bird species","Dinosaurs","Household chores","Things that are red",
-      "Mountains / hikes","Famous painters","Book genres","Breakfast foods","Types of pasta",
-      "Dog tricks","Hobbies","School subjects","Flowers","Sea creatures","Cookie types","Languages",
-      "Cities with a subway","Animals with stripes","Toys","Camping items","Card games","Weather words"
-    ];
-
-    const ruleSuggestionsPool = [
-      "No first names (use nicknames only)",
-      "No pointing (use elbows)",
-      "Speak in a movie quote once per turn",
-      "Tiny T-Rex arms while talking",
-      "British accent until your next draw",
-      "No using the word ‘drink’",
-      "Reverse the turn order",
-      "Clap before you speak",
-      "Thumb Master: last to put thumb on table drinks",
-      "No swearing",
-      "Rhyme every sentence end",
-      "Stand to speak",
-      "No looking at the card when you draw (someone else reads it)",
-      "Only whispering",
-      "Raise pinky when sipping",
-      "No touching hair",
-      "Questions must be answered with a question",
-      "Talk like a pirate",
-      "Ban a letter (e.g., no ‘S’ words)",
-      "Swap seats with someone of your choice"
-    ];
-
-    // Active state (local mode)
+    // Active state
     let deck = [];
     let drawn = [];
     let kingsDrawn = 0;
@@ -384,6 +375,13 @@
     function buildDeck(){ const d=[]; for(const s of SUITS){ for(const r of RANKS){ d.push({rank:r, suit:s}); } } return d; }
     function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
     function pickN(pool,n){ return shuffle(pool).slice(0,n); }
+
+    // expose to window for realtime module
+    window.buildDeck = buildDeck;
+    window.shuffle = shuffle;
+    window.pickN = pickN;
+    window.categoriesPool = categoriesPool;
+    window.ruleSuggestionsPool = ruleSuggestionsPool;
 
     function toast(msg){ const t=document.createElement('div'); t.className='fixed bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm shadow-xl'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),1400); }
 
@@ -421,6 +419,7 @@
     }
 
     function renderCategories(){ const box=$('#categories'); box.innerHTML=''; featuredCategories.forEach(c=>{ const chip=document.createElement('button'); chip.className='px-3 py-1.5 rounded-full bg-white/70 hover:bg-white text-indigo-950 dark:text-indigo-100'; chip.textContent=c; chip.addEventListener('click',()=>{ navigator.clipboard?.writeText(c); toast(`Copied “${c}”`); }); box.appendChild(chip); }); }
+
     function renderRuleIdeas(){
       const ul = document.getElementById('ruleIdeas');
       ul.innerHTML = '';
@@ -445,7 +444,7 @@
         });
         ul.appendChild(li);
       });
-    }</span>`; ul.appendChild(li); }); }
+    }
 
     function showPanel(el){ el.classList.remove('hiddenish'); }
     function hidePanel(el){ el.classList.add('hiddenish'); }
@@ -489,12 +488,11 @@
       hidePanel(document.getElementById('panelRuleIdeas'));
     }
 
-    function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class=\"text-slate-500 dark:text-slate-400\">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class=\"mb-1 text-sm text-slate-500 dark:text-slate-400\">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); const w = document.getElementById('cardWrapper'); w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true});
-      // optional AI host line
-      maybeAIHostline({ rank: card.rank, suit: card.suit }); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
+    function reshuffle(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; document.getElementById('history').innerHTML=''; updateCounters(); document.getElementById('actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Shuffled. Tap the card.</span>'; hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+
+    async function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; document.getElementById('actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); const w = document.getElementById('cardWrapper'); w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true}); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
       // Dynamic panels
       if(card.rank==='J'){
-        // ensure categories are fresh; if none yet, try AI now
         if(!featuredCategories || featuredCategories.length===0) await loadAICategories();
         showPanel(document.getElementById('panelCategories')); renderCategories(); hidePanel(document.getElementById('panelRuleIdeas'));
       }
@@ -503,6 +501,9 @@
         showPanel(document.getElementById('panelRuleIdeas')); renderRuleIdeas(); hidePanel(document.getElementById('panelCategories'));
       }
       else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+
+      // optional AI host line
+      maybeAIHostline({ rank: card.rank, suit: card.suit });
     }
 
     function backOne(){
@@ -511,28 +512,87 @@
       if(last.rank==='K' && kingsDrawn>0) kingsDrawn--;
       deck.push(last); // put it back on top
       updateCounters();
-      const h = $('#history'); if(h.firstElementChild) h.removeChild(h.firstElementChild);
+      const h = document.getElementById('history'); if(h.firstElementChild) h.removeChild(h.firstElementChild);
       const prev = drawn[drawn.length-1];
       if(prev){
         showCardFront(prev);
-        $('#actionText').innerHTML = `<div class=\"mb-1 text-sm text-slate-500 dark:text-slate-400\">${prev.rank}${prev.suit} – <b>${DEFAULT_RULES[prev.rank]?.name||''}</b></div>` + actionTextFor(prev);
-        if(prev.rank==='J'){ showPanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
-        else if(prev.rank==='K'){ showPanel($('#panelRuleIdeas')); hidePanel($('#panelCategories')); }
-        else { hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+        document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${prev.rank}${prev.suit} – <b>${DEFAULT_RULES[prev.rank]?.name||''}</b></div>` + actionTextFor(prev);
+        if(prev.rank==='J'){ showPanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+        else if(prev.rank==='K'){ showPanel(document.getElementById('panelRuleIdeas')); hidePanel(document.getElementById('panelCategories')); }
+        else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
       } else {
-        $('#frontRank').textContent='?'; $('#frontSuit').textContent='♠'; $('#frontCornerTL').textContent='★'; $('#frontCornerBR').textContent='★'; $('#frontSuitTL').textContent='♣'; $('#frontSuitBR').textContent='♣';
-        $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin.</span>';
-        hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas'));
+        document.getElementById('frontRank').textContent='?'; document.getElementById('frontSuit').textContent='♠'; document.getElementById('frontCornerTL').textContent='★'; document.getElementById('frontCornerBR').textContent='★'; document.getElementById('frontSuitTL').textContent='♣'; document.getElementById('frontSuitBR').textContent='♣';
+        document.getElementById('actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin.</span>';
+        hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas'));
       }
       if(players.length) prevTurn();
     }
 
-    // Events (Local)
-    document.getElementById('backBtn').addEventListener('click', backOne);
-    document.getElementById('cardWrapper').addEventListener('click', drawCard);
-    document.getElementById('cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); drawCard(); }});
-    document.getElementById('reshuffleBtn').addEventListener('click', ()=> newGame());
-    document.getElementById('resetBtn').addEventListener('click', ()=> newGame());
+    // --- Realtime integration hooks ---
+    window.NETWORK_MODE = 'local';
+    window.realtime = { available:false, isHost:false, roomCode:null };
+
+    function applyRemoteState(data){
+      deck = data.state.deck || [];
+      drawn = data.state.drawn || [];
+      kingsDrawn = data.state.kingsDrawn || 0;
+      featuredCategories = data.state.featuredCategories || [];
+      featuredRules = data.state.featuredRules || [];
+      players = (data.players||[]).map(p=>p.name);
+      currentIndex = data.state.turnIndex || 0;
+      clockwise = data.state.clockwise !== false;
+      updateCounters();
+      const h = document.getElementById('history'); h.innerHTML='';
+      drawn.slice().reverse().forEach(c=> h.appendChild(miniCardEl(c)) );
+      if(drawn.length){
+        const last = drawn[drawn.length-1];
+        showCardFront(last);
+        document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last);
+        if (last.rank==='J'){ showPanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+        else if (last.rank==='K'){ showPanel(document.getElementById('panelRuleIdeas')); hidePanel(document.getElementById('panelCategories')); }
+        else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+      }
+      renderCategories(); renderRuleIdeas(); renderPlayers();
+    }
+    window.applyRemoteState = applyRemoteState;
+
+    function updateRoomBadge(){
+      const badge = document.getElementById('roomBadge');
+      const text = document.getElementById('roomCodeText');
+      if(window.NETWORK_MODE==='realtime' && window.realtime.roomCode){
+        text.textContent = window.realtime.roomCode;
+        badge.classList.remove('hidden');
+        document.getElementById('netMode').textContent = 'Realtime';
+      } else {
+        text.textContent = 'LOCAL';
+        badge.classList.add('hidden');
+        document.getElementById('netMode').textContent = 'Local';
+      }
+    }
+
+    function gameDraw(){
+      if(window.NETWORK_MODE==='realtime'){
+        if(window.realtime.isHost && window.realtime.hostDrawCard){ window.realtime.hostDrawCard(); }
+        else toast('Only host can draw');
+      } else {
+        drawCard();
+      }
+    }
+    function gameBack(){
+      if(window.NETWORK_MODE==='realtime'){
+        if(window.realtime.isHost && window.realtime.hostBackOne){ window.realtime.hostBackOne(); }
+        else toast('Only host can undo');
+      } else {
+        backOne();
+      }
+    }
+
+    // Events
+    document.getElementById('backBtn').addEventListener('click', gameBack);
+    document.getElementById('cardWrapper').addEventListener('click', gameDraw);
+    document.getElementById('cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); gameDraw(); }});
+    document.getElementById('reshuffleBtn').addEventListener('click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host reshuffles only') : reshuffle());
+    document.getElementById('resetBtn').addEventListener('click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host resets only') : newGame());
     document.getElementById('safeToggle').addEventListener('change', ()=>{
       // Clear AI caches so tone updates immediately
       try{ localStorage.removeItem('kc_ai_categories'); localStorage.removeItem('kc_ai_rules'); }catch{}
@@ -558,7 +618,7 @@
     document.getElementById('shareBtn').addEventListener('click', doShare);
     document.getElementById('installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; document.getElementById('installBtn').classList.add('hidden'); });
 
-    // Room button: Pro gate
+    // --- Pro gate for Room button ---
     const roomBtn = document.getElementById('roomBtn');
     const proSheet = document.getElementById('proSheet');
     const proClose = document.getElementById('proClose');
@@ -567,7 +627,6 @@
     function hideProSheet(){ proSheet.classList.add('hidden'); }
 
     if(!window.KC_PRO){
-      roomBtn.classList.add('cursor-not-allowed','opacity-60','text-slate-400');
       roomBtn.addEventListener('click', showProSheet);
       document.getElementById('roomBadge').classList.add('hidden');
       document.getElementById('presenceRow').classList.add('hidden');
@@ -577,108 +636,154 @@
 
     proClose?.addEventListener('click', hideProSheet);
 
-    // Buy buttons
-    function openCheckout(link){
-      if(!link){ toast('Add your Stripe Payment Link URL'); return; }
-      metrics('checkout_start', { plan: 'unknown' });
-      window.open(link, '_blank');
-    }
-    document.getElementById('buyPassBtn')?.addEventListener('click', ()=>{ metrics('checkout_start', { plan: 'party_pass' }); openCheckout(window.STRIPE_LINK_PARTY_PASS); });
-    document.getElementById('buyLifetimeBtn')?.addEventListener('click', ()=>{ metrics('checkout_start', { plan: 'lifetime' }); openCheckout(window.STRIPE_LINK_LIFETIME); });
+    function openCheckout(link){ if(!link){ toast('Add your Stripe Payment Link URL'); return; } metrics('checkout_start'); window.open(link, '_blank'); }
+    document.getElementById('buyPassBtn')?.addEventListener('click', ()=> openCheckout(window.STRIPE_LINK_PARTY_PASS));
+    document.getElementById('buyLifetimeBtn')?.addEventListener('click', ()=> openCheckout(window.STRIPE_LINK_LIFETIME));
+    document.getElementById('redeemBtn')?.addEventListener('click', ()=>{ const code=(document.getElementById('redeemCode').value||'').trim(); if(!code) return toast('Enter a code'); unlockPro('code'); });
 
-    // Redeem (DEV/testing)
-    document.getElementById('redeemBtn')?.addEventListener('click', ()=>{
-      const code = (document.getElementById('redeemCode').value||'').trim();
-      if(!code) return toast('Enter a code');
-      // simple demo: any non-empty code unlocks
-      unlockPro('code');
-    });
+    function enableProUI(){
+      window.KC_PRO = true;
+      localStorage.setItem('kc_party_pass','1');
+      roomBtn.classList.remove('cursor-not-allowed','opacity-60','text-slate-400');
+      roomBtn.classList.add('hover:bg-slate-200','dark:hover:bg-slate-700');
+      roomBtn.title='Room';
+      const clone = roomBtn.cloneNode(true); roomBtn.replaceWith(clone);
+      clone.id='roomBtn';
+      clone.addEventListener('click', ()=> document.getElementById('roomSheet').classList.remove('hidden'));
+      document.getElementById('roomBadge').classList.remove('hidden');
+      toast('Party Pass unlocked!');
+      hideProSheet?.();
+      metrics('unlock', { source: 'ui' });
+    }
+    function unlockPro(source){ enableProUI(); metrics('unlock', { source }); }
+    function checkUnlockFromURL(){ const u=new URL(location.href); if(u.searchParams.get('pro')==='1'||u.searchParams.get('party')==='1'){ unlockPro('redirect'); u.searchParams.delete('pro'); u.searchParams.delete('party'); history.replaceState({}, '', u.pathname + (u.search ? ('?'+u.searchParams.toString()) : '') + u.hash); } }
 
     // Init
-    function init(){
-      initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame();
-      checkUnlockFromURL(); // auto-unlock if redirected from Stripe
-    }
+    function init(){ initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame(); checkUnlockFromURL(); updateRoomBadge(); }
     init();
   </script>
 
-  <!-- Realtime (Firebase) — kept but fully disabled unless KC_PRO=true -->
+  <!-- Realtime (Firebase) — OPTIONAL. Provide config via window.FIREBASE_CONFIG before this script. -->
   <script type="module">
-    if(!window.KC_PRO){ console.info('[KC] Realtime disabled — Pro only.'); }
-    else {
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-      import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-      import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
-      const cfg = window.FIREBASE_CONFIG;
-      if(!cfg){ console.info('[KC] No FIREBASE_CONFIG; realtime idle.'); }
-      else {
-        const app = initializeApp(cfg);
-        const auth = getAuth(app);
-        const db   = getFirestore(app);
-        await signInAnonymously(auth).catch(()=>{});
+    const cfg = window.FIREBASE_CONFIG;
+    if(!cfg){ window.realtime.available=false; console.info('[KC] Realtime disabled (no FIREBASE_CONFIG)'); return; }
 
-        let ROOM_ID = null;
-        function randCode(len=5){ return Array.from(crypto.getRandomValues(new Uint8Array(len))).map(n => "ABCDEFGHJKLMNPQRSTUVWXYZ"[n%25]).join(""); }
+    const app = initializeApp(cfg);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+    await signInAnonymously(auth).catch(()=>{});
 
-        async function createRoom({name}){
-          const code = randCode(5);
-          ROOM_ID = code;
-          const ref = doc(db, 'rooms', ROOM_ID);
-          await setDoc(ref, {
-            createdAt: Date.now(),
-            hostUid: auth.currentUser?.uid || 'host',
-            code,
-            players: [{ uid: auth.currentUser?.uid || 'host', name, lastSeen: Date.now() }],
-            state: {
-              deck: (function(){ const d=[]; for(const s of ["♠","♥","♦","♣"]) for(const r of ["A","2","3","4","5","6","7","8","9","10","J","Q","K"]) d.push({rank:r,suit:s}); return d; })().sort(()=>Math.random()-.5),
-              drawn: [], kingsDrawn: 0,
-              featuredCategories: [],
-              featuredRules: [],
-              panels: { showCats:false, showRules:false },
-              safe: true, turnIndex: 0, clockwise: true
-            }
-          });
-          document.getElementById('roomBadge').classList.remove('hidden');
-          document.getElementById('roomCodeText').textContent = code;
-          subscribe();
-          return code;
+    let ROOM_ID = null;
+
+    function randCode(len=5){ return Array.from(crypto.getRandomValues(new Uint8Array(len))).map(n => "ABCDEFGHJKLMNPQRSTUVWXYZ"[n%25]).join(""); }
+
+    async function createRoom({name}){
+      const code = randCode(5);
+      ROOM_ID = code;
+      const ref = doc(db, 'rooms', ROOM_ID);
+      await setDoc(ref, {
+        createdAt: Date.now(),
+        hostUid: auth.currentUser?.uid || 'host',
+        code,
+        players: [{ uid: auth.currentUser?.uid || 'host', name, lastSeen: Date.now() }],
+        state: {
+          deck: window.shuffle(window.buildDeck ? window.buildDeck() : (function(){ const d=[]; for(const s of ["♠","♥","♦","♣"]) for(const r of ["A","2","3","4","5","6","7","8","9","10","J","Q","K"]) d.push({rank:r,suit:s}); return d; })()),
+          drawn: [], kingsDrawn: 0,
+          featuredCategories: window.pickN ? window.pickN(window.categoriesPool,4) : [],
+          featuredRules: window.pickN ? window.pickN(window.ruleSuggestionsPool,8) : [],
+          panels: { showCats:false, showRules:false },
+          safe: true, turnIndex: 0, clockwise: true
         }
+      });
+      window.realtime.isHost = true; window.realtime.roomCode = code; window.realtime.available = true;
+      subscribe();
+      document.getElementById('activeRoomCode').textContent = code;
+      document.getElementById('activeRoomHost').textContent = name;
+      document.getElementById('roomPlayers').textContent = name;
+      document.getElementById('roomBadge').classList.remove('hidden');
+      document.getElementById('roomCodeText').textContent = code;
+      return code;
+    }
 
-        async function joinRoom({code, name}){
-          ROOM_ID = code.toUpperCase();
-          const ref = doc(db, 'rooms', ROOM_ID);
-          const snap = await getDoc(ref);
-          if(!snap.exists()) throw new Error('Room not found');
-          const data = snap.data();
-          const players = (data.players||[]).filter(p=>p.uid!==auth.currentUser?.uid);
-          players.push({ uid: auth.currentUser?.uid || Math.random().toString(36).slice(2), name, lastSeen: Date.now() });
-          await updateDoc(ref, { players });
-          document.getElementById('roomBadge').classList.remove('hidden');
-          document.getElementById('roomCodeText').textContent = ROOM_ID;
-          subscribe();
-        }
+    async function joinRoom({code, name}){
+      ROOM_ID = code.toUpperCase();
+      const ref = doc(db, 'rooms', ROOM_ID);
+      const snap = await getDoc(ref);
+      if(!snap.exists()) throw new Error('Room not found');
+      const data = snap.data();
+      const players = (data.players||[]).filter(p=>p.uid!==auth.currentUser?.uid);
+      players.push({ uid: auth.currentUser?.uid || Math.random().toString(36).slice(2), name, lastSeen: Date.now() });
+      await updateDoc(ref, { players });
+      window.realtime.isHost = (data.hostUid === (auth.currentUser?.uid));
+      window.realtime.roomCode = ROOM_ID; window.realtime.available = true;
+      subscribe();
+      document.getElementById('activeRoomCode').textContent = ROOM_ID;
+      document.getElementById('activeRoomHost').textContent = data.players?.[0]?.name || 'Host';
+      document.getElementById('roomPlayers').textContent = players.map(p=>p.name).join(', ');
+      document.getElementById('roomBadge').classList.remove('hidden');
+      document.getElementById('roomCodeText').textContent = ROOM_ID;
+    }
 
-        function subscribe(){
-          const ref = doc(db, 'rooms', ROOM_ID);
-          onSnapshot(ref, (snap)=>{
-            if(!snap.exists()) return;
-            const data = snap.data();
-            // You can map remote state to UI here when Pro is enabled
-          });
-        }
+    function subscribe(){
+      const ref = doc(db, 'rooms', ROOM_ID);
+      onSnapshot(ref, (snap)=>{
+        if(!snap.exists()) return;
+        const data = snap.data();
+        window.applyRemoteState(data);
+        document.getElementById('roomPlayers').textContent = (data.players||[]).map(p=>p.name).join(', ');
+      });
+    }
 
-        // Hook up basic create/join if you turn Pro on
-        const sheet = document.getElementById('roomSheet');
-        if(sheet){
-          const close = document.getElementById('roomClose');
-          close?.addEventListener('click', ()=> sheet.classList.add('hidden'));
-        }
-        window.realtime = { createRoom, joinRoom };
-      }
+    async function hostDrawCard(){
+      const ref = doc(db, 'rooms', ROOM_ID);
+      await runTransaction(db, async (tx)=>{
+        const snap = await tx.get(ref); const data = snap.data();
+        const d = (data.state.deck||[]).slice(); if(!d.length) return;
+        const card = d.pop();
+        const drawnNew = (data.state.drawn||[]).concat([card]);
+        const kings = (data.state.kingsDrawn||0) + (card.rank==='K'?1:0);
+        tx.update(ref, {
+          "state.deck": d,
+          "state.drawn": drawnNew,
+          "state.kingsDrawn": kings,
+          "state.panels": { showCats: card.rank==='J', showRules: card.rank==='K' },
+          "state.turnIndex": ( (data.state.turnIndex||0) + ((data.state.clockwise!==false)?1:-1) + (data.players||[]).length ) % Math.max(1,(data.players||[]).length)
+        });
+      });
+    }
+    async function hostBackOne(){
+      const ref = doc(db, 'rooms', ROOM_ID);
+      await runTransaction(db, async (tx)=>{
+        const snap = await tx.get(ref); const data = snap.data();
+        const drawnNew = (data.state.drawn||[]).slice(); if(!drawnNew.length) return;
+        const last = drawnNew.pop();
+        const deckNew = (data.state.deck||[]).concat([last]);
+        tx.update(ref, {
+          "state.deck": deckNew,
+          "state.drawn": drawnNew,
+          "state.kingsDrawn": Math.max(0, (data.state.kingsDrawn||0) - (last.rank==='K'?1:0)),
+          "state.panels": { showCats:false, showRules:false },
+          "state.turnIndex": ( (data.state.turnIndex||0) - ((data.state.clockwise!==false)?1:-1) + (data.players||[]).length ) % Math.max(1,(data.players||[]).length)
+        });
+      });
+    }
+
+    window.realtime.available = true;
+    window.realtime.createRoom = createRoom;
+    window.realtime.joinRoom = joinRoom;
+    window.realtime.hostDrawCard = hostDrawCard;
+    window.realtime.hostBackOne = hostBackOne;
+
+    // Auto-join if ?room=
+    const roomCode = (new URL(location.href)).searchParams.get('room');
+    if(roomCode){
+      const name = localStorage.getItem('kc_name') || 'Player';
+      try { await joinRoom({code: roomCode, name}); window.NETWORK_MODE='realtime'; if(document.getElementById('roomSheet')) document.getElementById('roomSheet').classList.add('hidden'); } catch(e){ console.warn(e); }
     }
   </script>
-
 </body>
-</html>
 </html>
