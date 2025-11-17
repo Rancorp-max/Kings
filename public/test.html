@@ -469,20 +469,17 @@
     function loadFromUrl(){ const s=new URL(location.href).searchParams.get('s'); if(!s) return; try{ applyState(JSON.parse(base64urlDecode(s))); }catch{} }
 
     // Game Flow (LOCAL)
-    async function newGame(){
-      deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0;
-      featuredCategories=pickN(categoriesPool,4);
-      featuredRules=pickN(ruleSuggestionsPool,8);
-      // Try AI enrichments (non-blocking)
-      loadAICategories();
-      loadAIRuleIdeas();
-      document.getElementById('history').innerHTML='';
-      updateCounters(); renderCategories(); renderRuleIdeas();
-      document.getElementById('actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>';
-      document.getElementById('card').style.transform='rotateY(0deg)';
-      document.getElementById('cardWrapper').classList.remove('flip');
-      hidePanel(document.getElementById('panelCategories'));
-      hidePanel(document.getElementById('panelRuleIdeas'));
+    async function newGame(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; featuredCategories=pickN(categoriesPool,4); featuredRules=pickN(ruleSuggestionsPool,8); $('#history').innerHTML=''; updateCounters(); renderCategories(); renderRuleIdeas(); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>'; $('#card').style.transform='rotateY(0deg)'; $('#cardWrapper').classList.remove('flip'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+
+    // New: safe reshuffle (fixes missing function error)
+    function reshuffle(){
+      deck = shuffle(deck.concat(drawn));
+      drawn = [];
+      kingsDrawn = 0;
+      $('#history').innerHTML = '';
+      updateCounters();
+      $('#actionText').innerHTML = '<span class="text-slate-600 dark:text-slate-300">Deck reshuffled. Tap the card to continue.</span>';
+      hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas'));
     }
 
     function reshuffle(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; document.getElementById('history').innerHTML=''; updateCounters(); document.getElementById('actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Shuffled. Tap the card.</span>'; hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
@@ -582,25 +579,24 @@
       }
     }
 
-    // Events
-    document.getElementById('backBtn').addEventListener('click', gameBack);
-    document.getElementById('cardWrapper').addEventListener('click', gameDraw);
-    document.getElementById('cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); gameDraw(); }});
-    document.getElementById('reshuffleBtn').addEventListener('click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host reshuffles only') : reshuffle());
-    document.getElementById('resetBtn').addEventListener('click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host resets only') : newGame());
-    document.getElementById('safeToggle').addEventListener('change', ()=>{
-      // Clear AI caches so tone updates immediately
-      try{ localStorage.removeItem('kc_ai_categories'); localStorage.removeItem('kc_ai_rules'); }catch{}
-      // Refresh panels if open
-      loadAICategories();
-      loadAIRuleIdeas();
-      if(drawn.length){
-        const last=drawn[drawn.length-1];
-        document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last);
-      }
+    // Events (safe bind)
+    function bind(id, evt, fn){ const el=document.getElementById(id); if(el) el.addEventListener(evt, fn); else console.warn('[KC] Missing element:', id); }
+    bind('backBtn','click', gameBack);
+    // Tap/keyboard on both wrapper and card for safety
+    ;['cardWrapper','card'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.addEventListener('click', gameDraw);
+      el.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); gameDraw(); }});
+      el.setAttribute('tabindex','0');
+      el.setAttribute('role','button');
+      el.setAttribute('aria-label','Draw card');
     });
-    document.getElementById('rerollCats').addEventListener('click', ()=>{ featuredCategories=pickN(categoriesPool,4); renderCategories(); toast('Fresh categories'); });
-    document.getElementById('rerollRules').addEventListener('click', ()=>{ featuredRules=pickN(ruleSuggestionsPool,8); renderRuleIdeas(); toast('New ideas'); });
+    bind('reshuffleBtn','click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host reshuffles only') : reshuffle());
+    bind('resetBtn','click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host resets only') : newGame());
+    const safeT = document.getElementById('safeToggle'); if(safeT){ safeT.addEventListener('change', ()=>{ if(drawn.length){ const last=drawn[drawn.length-1]; document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last); } }); }
+    bind('rerollCats','click', ()=>{ featuredCategories=pickN(categoriesPool,4); renderCategories(); toast('Fresh categories'); });
+    bind('rerollRules','click', ()=>{ featuredRules=pickN(ruleSuggestionsPool,8); renderRuleIdeas(); toast('New ideas'); });
 
     // Header buttons
     document.getElementById('playersBtn').addEventListener('click', ()=>{ document.getElementById('playersSheet').classList.remove('hidden'); });
@@ -654,8 +650,8 @@
     function checkUnlockFromURL(){ const u=new URL(location.href); if(u.searchParams.get('pro')==='1'||u.searchParams.get('party')==='1'){ unlockPro('redirect'); u.searchParams.delete('pro'); u.searchParams.delete('party'); history.replaceState({}, '', u.pathname + (u.search ? ('?'+u.searchParams.toString()) : '') + u.hash); } }
 
     // Init
-    function init(){ initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame(); checkUnlockFromURL(); updateRoomBadge(); }
-    init();
+    function init(){ try{ initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame(); loadFromUrl(); updateRoomBadge(); } catch(e){ console.error('[KC] init error', e); toast('Init error — check console'); } }
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
   </script>
 
   <!-- Realtime (Firebase) — OPTIONAL. Provide config via window.FIREBASE_CONFIG before this script. -->
