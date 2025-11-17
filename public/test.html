@@ -484,7 +484,7 @@
 
     function reshuffle(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; document.getElementById('history').innerHTML=''; updateCounters(); document.getElementById('actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Shuffled. Tap the card.</span>'; hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
 
-    async function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; document.getElementById('actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); const w = document.getElementById('cardWrapper'); w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true}); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
+    async function drawCard(){ try{ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; document.getElementById('actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); const w = document.getElementById('cardWrapper'); w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true}); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
       // Dynamic panels
       if(card.rank==='J'){
         if(!featuredCategories || featuredCategories.length===0) await loadAICategories();
@@ -496,9 +496,9 @@
       }
       else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
 
-          }
-
-    function backOne(){
+            } catch(err){ console.error('[KC] draw error', err); toast('Draw error — check console'); }
+    }
+    function backOne(){ try{
       if(!drawn.length){ toast('Nothing to undo'); return; }
       const last = drawn.pop();
       if(last.rank==='K' && kingsDrawn>0) kingsDrawn--;
@@ -518,6 +518,7 @@
         hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas'));
       }
       if(players.length) prevTurn();
+      } catch(err){ console.error('[KC] undo error', err); toast('Undo error — check console'); }
     }
 
     // --- Realtime integration hooks ---
@@ -580,18 +581,13 @@
     }
 
     // Events (safe bind)
-    function bind(id, evt, fn){ const el=document.getElementById(id); if(el) el.addEventListener(evt, fn); else console.warn('[KC] Missing element:', id); }
+    function bind(id, evt, fn){ const el=document.getElementById(id); if(el) el.addEventListener(evt, fn); }
     bind('backBtn','click', gameBack);
-    // Tap/keyboard on both wrapper and card for safety
-    ;['cardWrapper','card'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.addEventListener('click', gameDraw);
-      el.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); gameDraw(); }});
-      el.setAttribute('tabindex','0');
-      el.setAttribute('role','button');
-      el.setAttribute('aria-label','Draw card');
-    });
+
+    // Robust tap-to-draw: delegate at document level, so any overlay/layout changes won't break it
+    document.addEventListener('click', (e)=>{ if(e.target.closest('#cardWrapper')||e.target.closest('#card')){ e.preventDefault(); gameDraw(); }});
+    document.addEventListener('keydown', (e)=>{ if((e.key==='Enter'||e.key===' ') && (document.activeElement?.id==='cardWrapper' || document.activeElement?.id==='card')){ e.preventDefault(); gameDraw(); }});
+
     bind('reshuffleBtn','click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host reshuffles only') : reshuffle());
     bind('resetBtn','click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host resets only') : newGame());
     const safeT = document.getElementById('safeToggle'); if(safeT){ safeT.addEventListener('change', ()=>{ if(drawn.length){ const last=drawn[drawn.length-1]; document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last); } }); }
