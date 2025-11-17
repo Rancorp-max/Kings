@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>King's Cup — Party Web App</title>
+  <meta name="description" content="Mobile-friendly King's Cup web app. Tap the card to draw. Jack reveals Categories; King suggests New Rules. Shareable link. Multiplayer is a Pro feature (greyed out)." />
+  <meta name="theme-color" content="#7c3aed" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{ --brand:#7c3aed; --brand-accent:#22c55e; --brand-warm:#f59e0b; --front-img:none; --back-img:none; }
+    html,body{ font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    .card-3d{ perspective: 1200px; }
+    .card-face{ transform-style: preserve-3d; transition: transform .5s ease; position: relative; }
+    .flip .card-face{ transform: rotateY(180deg); }
+    .face-front, .face-back{ backface-visibility: hidden; position: relative; }
+    .face-back{ transform: rotateY(180deg); }
+    /* Custom face images centered behind content */
+    .face-front::before, .face-back::before{ content:""; position:absolute; inset:0; background-repeat:no-repeat; background-position:center; background-size:contain; pointer-events:none; z-index:0; }
+    .face-front::before{ background-image: var(--front-img); }
+    .face-back::before{ background-image: var(--back-img); }
+    .face-front > *, .face-back > * { position: relative; z-index: 1; }
+
+    .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:.9rem; }
+    .panel{ transition: all .25s ease; }
+    .panel.hiddenish{ opacity:0; max-height:0; overflow:hidden; pointer-events:none; }
+    .mini-card{ width:3.25rem; height:4.5rem; }
+
+    /* Between-card animation on the wrapper */
+    @keyframes card-swap{ 0%{ transform: translateY(0) scale(1); } 50%{ transform: translateY(-6px) scale(1.03);} 100%{ transform: translateY(0) scale(1);} }
+    .card-swap{ animation: card-swap 320ms ease; }
+
+    /* Pop-in for history minis */
+    @keyframes pop{ 0%{ transform: scale(.85); opacity:0; } 100%{ transform: scale(1); opacity:1; } }
+    .pop-in{ animation: pop 180ms ease-out; }
+
+    /* Presence avatars (kept for Pro; hidden by default) */
+    .avatar{ width:28px; height:28px; border-radius:9999px; display:inline-grid; place-items:center; font-weight:700; font-size:12px; color:white; position:relative; box-shadow:0 1px 2px rgba(0,0,0,.25); }
+    .avatar .dot{ position:absolute; right:-2px; bottom:-2px; width:10px; height:10px; border-radius:9999px; border:2px solid white; background:#10b981; }
+    .avatar.offline .dot{ background:#9ca3af; }
+  </style>
+  <!-- Set Pro flag (false by default). Turning this on unlocks the multiplayer UI. -->
+  <script>window.KC_PRO = !!localStorage.getItem('kc_party_pass');</script>
+  <script>window.KC_PRO = !!localStorage.getItem('kc_party_pass');
+  // OPTIONAL: paste your Stripe Payment Link URLs here (or set them at runtime before init)
+  window.STRIPE_LINK_PARTY_PASS = window.STRIPE_LINK_PARTY_PASS || ""; // e.g., https://buy.stripe.com/... (48h pass)
+  window.STRIPE_LINK_LIFETIME  = window.STRIPE_LINK_LIFETIME  || ""; // e.g., https://buy.stripe.com/... (lifetime)
+  </script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <!-- Header -->
+  <header class="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/90 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-white font-black">K</div>
+      <h1 class="flex-1 text-lg font-extrabold tracking-tight">King's Cup</h1>
+      <span id="roomBadge" class="hidden text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">ROOM: <b id="roomCodeText">PRO</b></span>
+      <div id="presenceRow" class="hidden md:flex items-center gap-1"></div>
+      <!-- Room button is greyed out if not Pro -->
+      <button id="roomBtn" class="icon-btn bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-60" title="Multiplayer (Pro)">🧩</button>
+      <button id="playersBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Players">👥</button>
+      <button id="shareBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Share">🔗</button>
+      <button id="installBtn" class="hidden icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Install">⬇️</button>
+      <button id="themeToggle" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Theme">🌙</button>
+    </div>
+  </header>
+
+  <!-- Main (single column, mobile-first) -->
+  <main class="max-w-2xl mx-auto px-4 py-6 space-y-4">
+    <!-- Card (tap to draw) -->
+    <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 card-3d">
+      <div id="cardWrapper" role="button" tabindex="0" aria-label="Draw card" class="relative mx-auto w-[240px] h-[336px] md:w-[280px] md:h-[392px] cursor-pointer select-none">
+        <div id="card" class="card-face absolute inset-0 rounded-2xl shadow-xl">
+          <!-- FRONT -->
+          <div class="face-front absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 p-4 text-white grid">
+            <div class="self-start text-left">
+              <div id="frontCornerTL" class="text-2xl font-extrabold">★</div>
+              <div id="frontSuitTL" class="-mt-1 opacity-80">♣︎</div>
+            </div>
+            <div class="place-self-center text-center">
+              <div id="frontRank" class="text-7xl font-black drop-shadow">?</div>
+              <div id="frontSuit" class="text-4xl opacity-90">♠︎</div>
+            </div>
+            <div class="self-end text-right">
+              <div id="frontCornerBR" class="text-2xl font-extrabold">★</div>
+              <div id="frontSuitBR" class="-mt-1 opacity-80">♣︎</div>
+            </div>
+          </div>
+          <!-- BACK -->
+          <div class="face-back absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,.25),transparent_40%),radial-gradient(circle_at_70%_80%,rgba(255,255,255,.15),transparent_40%),linear-gradient(135deg,#111827,#4c1d95)] grid place-items-center">
+            <div class="text-center">
+              <div class="text-white/90 text-sm">Tap to draw</div>
+              <div class="text-white text-4xl font-black">K♛C</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Controls row under card: Back only (tap card to draw) -->
+      <div class="mt-4 flex items-center justify-center gap-3">
+        <button id="backBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Undo last draw" aria-label="Undo last">↩️</button>
+      </div>
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <div class="flex gap-3"><span>Deck <b id="deckCount">52</b></span><span>Drawn <b id="drawnCount">0</b></span><span>Kings Cup <b id="kingsCount">0 / 4</b></span></div>
+        <div class="flex items-center gap-3">
+          <label class="inline-flex items-center gap-2"><input id="safeToggle" type="checkbox" class="h-4 w-4 rounded border-slate-300 dark:border-slate-700" /><span>Gentle mode</span></label>
+          <button id="reshuffleBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Reshuffle</button>
+          <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Rule area directly under controls (with a fun visual) -->
+    <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+      <div id="actionText" class="text-base text-slate-700 dark:text-slate-300"></div>
+    </section>
+
+    <!-- Category helper: only on Jack -->
+    <section id="panelCategories" class="panel hiddenish p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-indigo-950 dark:text-indigo-100">Categories</h2>
+        <button id="rerollCats" class="text-indigo-700 dark:text-indigo-300 text-sm">Reroll</button>
+      </div>
+      <p class="text-xs text-indigo-900/80 dark:text-indigo-200/80">Pick one of these and go around. First miss sips/penalty.</p>
+      <div id="categories" class="mt-3 flex flex-wrap gap-2"></div>
+    </section>
+
+    <!-- New Rule suggestions: appear when a King is drawn -->
+    <section id="panelRuleIdeas" class="panel hiddenish p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-amber-900 dark:text-amber-100">Try a New Rule</h2>
+        <button id="rerollRules" class="text-amber-800/80 dark:text-amber-200/90 text-sm">Shuffle</button>
+      </div>
+      <ul id="ruleIdeas" class="text-sm text-amber-900/90 dark:text-amber-200/90 space-y-2"></ul>
+    </section>
+
+    <!-- History as mini cards -->
+    <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+      <h3 class="font-semibold">History</h3>
+      <div id="history" class="mt-3 grid grid-cols-6 sm:grid-cols-8 gap-2"></div>
+    </section>
+      <!-- Pro Upsell Sheet (Party Pass) -->
+    <div id="proSheet" class="fixed inset-0 z-40 hidden">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+      <div class="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-5 space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-lg font-extrabold">Party Pass (Pro)</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-300">Unlock realtime rooms + unlimited rule ideas + custom faces + saved player lists.</p>
+          </div>
+          <button id="proClose" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">✕</button>
+        </div>
+        <ul class="grid gap-2 text-sm text-slate-700 dark:text-slate-300">
+          <li class="flex items-center gap-2"><span>🧩</span><span>Host & join live rooms (Jackbox-style)</span></li>
+          <li class="flex items-center gap-2"><span>🎨</span><span>Upload custom card faces</span></li>
+          <li class="flex items-center gap-2"><span>💡</span><span>Shuffle premium “New Rule” packs</span></li>
+          <li class="flex items-center gap-2"><span>👥</span><span>Save players & turn order</span></li>
+        </ul>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <button id="buyPassBtn" class="w-full px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold">Get 48‑hour Party Pass</button>
+          <button id="buyLifetimeBtn" class="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Unlock Lifetime Pro</button>
+        </div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">
+          <p>Tip: In Stripe Payment Link, set <b>Post‑payment redirect</b> to <code>?pro=1</code> on your domain so unlock happens automatically.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="redeemCode" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" placeholder="Enter code (DEV)" />
+          <button id="redeemBtn" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Redeem</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Players Sheet (mobile-friendly) -->
+  <div id="playersSheet" class="fixed inset-0 z-30 hidden">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <div class="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-bold">Players & Turn</h2>
+        <div class="flex items-center gap-2 text-sm">
+          <button id="dirToggle" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Toggle direction">↻</button>
+          <button id="prevTurn" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Previous">◀</button>
+          <button id="nextTurn" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Next">▶</button>
+          <button id="playersClose" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Close">✕</button>
+        </div>
+      </div>
+      <form id="playerForm" class="flex gap-2 mb-3">
+        <input id="playerName" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" placeholder="Add player name" />
+        <button class="px-3 py-2 rounded-lg bg-violet-600 text-white">Add</button>
+      </form>
+      <div id="currentPlayerBox" class="text-sm text-slate-600 dark:text-slate-300 mb-2">No players yet.</div>
+      <ul id="playersList" class="space-y-2"></ul>
+    </div>
+  </div>
+
+  <!-- Room Sheet (Pro-locked) -->
+  <div id="roomSheet" class="fixed inset-0 z-30 hidden">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <div class="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="font-bold">Room (Pro)</h2>
+        <button id="roomClose" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">✕</button>
+      </div>
+      <div class="text-sm text-slate-600 dark:text-slate-300">Multiplayer rooms are a <b>Pro</b> feature. Unlock to create or join rooms.</div>
+    </div>
+  </div>
+
+  <footer class="max-w-2xl mx-auto px-4 pb-10 text-center text-xs text-slate-500 dark:text-slate-400">
+    Built for friends & laughs. Works offline. <span class="opacity-70">Multiplayer is Pro (coming soon).</span>
+  </footer>
+
+  <script>
+    // --- Lightweight metrics (local only) ---
+    function metrics(event, data={}){
+      try{
+        const key='kc_metrics';
+        const arr=JSON.parse(localStorage.getItem(key)||'[]');
+        arr.push({t:Date.now(),e:event,d:data});
+        localStorage.setItem(key, JSON.stringify(arr));
+        console.debug('[kc]', event, data);
+      }catch{}
+    }
+
+    // Unlock helpers
+    function enableProUI(){
+      window.KC_PRO = true;
+      localStorage.setItem('kc_party_pass','1');
+      const roomBtn = document.getElementById('roomBtn');
+      roomBtn.classList.remove('cursor-not-allowed','opacity-60','text-slate-400');
+      roomBtn.classList.add('hover:bg-slate-200','dark:hover:bg-slate-700');
+      roomBtn.title='Room';
+      roomBtn.replaceWith(roomBtn.cloneNode(true)); // remove old listeners
+      const newBtn = document.getElementById('roomBtn');
+      newBtn.addEventListener('click', ()=> document.getElementById('roomSheet').classList.remove('hidden'));
+      document.getElementById('roomBadge').classList.remove('hidden');
+      toast('Party Pass unlocked!');
+      hideProSheet?.();
+      metrics('unlock', { source: 'ui' });
+    }
+    function unlockPro(source){ enableProUI(); metrics('unlock', { source }); }
+    function checkUnlockFromURL(){
+      const u=new URL(location.href);
+      if(u.searchParams.get('pro')==='1' || u.searchParams.get('party')==='1'){
+        unlockPro('redirect');
+        u.searchParams.delete('pro'); u.searchParams.delete('party');
+        history.replaceState({}, '', u.pathname + (u.search ? ('?'+u.searchParams.toString()) : '') + u.hash);
+      }
+    }
+  </script>
+
+  <script>
+    // --- AI Helpers (client) ---
+    async function aiFetch(endpoint, body, opts={}){
+      const { cacheKey, ttlMs = 5*60*1000 } = opts;
+      if(cacheKey){
+        try{
+          const cached = JSON.parse(localStorage.getItem(cacheKey)||'null');
+          if(cached && (Date.now()-cached.t)<ttlMs) return cached.v;
+        }catch{}
+      }
+      try{
+        const res = await fetch(`/api/ai/${endpoint}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{}) });
+        if(!res.ok) throw new Error('AI endpoint failed');
+        const json = await res.json();
+        if(cacheKey) localStorage.setItem(cacheKey, JSON.stringify({t:Date.now(), v:json}));
+        return json;
+      }catch(e){ return null; }
+    }
+
+    async function loadAICategories(){
+      const safe = document.getElementById('safeToggle')?.checked ?? true;
+      const payload = { players, locale: Intl.DateTimeFormat().resolvedOptions().timeZone || 'local', safeMode: !!safe };
+      const data = await aiFetch('categories', payload, { cacheKey: 'kc_ai_categories' });
+      if(data && Array.isArray(data.categories) && data.categories.length){
+        featuredCategories = data.categories.slice(0,4);
+        renderCategories();
+      }
+    }
+    async function loadAIRuleIdeas(){
+      const safe = document.getElementById('safeToggle')?.checked ?? true;
+      const data = await aiFetch('rule-ideas', { safeMode: !!safe }, { cacheKey: 'kc_ai_rules' });
+      if(data && Array.isArray(data.rules) && data.rules.length){
+        featuredRules = data.rules.slice(0,8);
+        renderRuleIdeas();
+      }
+    }
+
+    async function maybeAIHostline(lastCard){
+      const safe = document.getElementById('safeToggle')?.checked ?? true;
+      const data = await aiFetch('hostline', { safeMode: !!safe, lastCard, players, kingsDrawn, count: drawn.length });
+      if(data && data.line){
+        const box = document.getElementById('actionText');
+        const p = document.createElement('div');
+        p.className = 'mt-2 text-sm italic text-slate-600 dark:text-slate-300';
+        p.textContent = 'MC: ' + data.line;
+        box.appendChild(p);
+      }
+    }
+
+    // --- Data & Rules ---
+    const SUITS = ["♠", "♥", "♦", "♣"]; // display only
+    const RANKS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+
+    const DEFAULT_RULES = {
+      A: { name: "Never Have I Ever", desc: "Each player holds up 3 fingers (or 5). The drawer starts: say something you’ve never done. Anyone who has, takes a sip/penalty and lowers a finger." },
+      2: { name: "You", desc: "Choose someone to take a sip/penalty." },
+      3: { name: "Me", desc: "You take a sip/penalty." },
+      4: { name: "Floor", desc: "Last to touch the floor takes a sip/penalty." },
+      5: { name: "Guys", desc: "All who identify as guys take a sip/penalty. (Alt: anyone wearing jeans)" },
+      6: { name: "Girls", desc: "All who identify as girls take a sip/penalty. (Alt: anyone with glasses)" },
+      7: { name: "Heaven", desc: "Last to point upward takes a sip/penalty." },
+      8: { name: "Mate", desc: "Pick a mate; you two take sips/penalties together for the rest of the game." },
+      9: { name: "Rhyme", desc: "Say a word; go around rhyming it. First stumble or repeat takes a sip/penalty." },
+      10: { name: "Waterfall", desc: "Everyone starts sipping/penalty at once. You can stop only when the person to your right stops." },
+      J: { name: "Categories", desc: "Pick a category and go around naming items in it. First miss takes a sip/penalty." },
+      Q: { name: "Question Master", desc: "If players answer your questions, they take a sip/penalty. Lasts until the next Queen is drawn." },
+      K: { name: "King’s Cup", desc: "First three Kings add a splash to the Cup; the fourth King drinks it (or a big sip in Gentle mode)." },
+    };
+
+    // Optional custom card face images (replace with your paths)
+    const CARD_IMAGES = { front: "", back: "" };
+    function applyCardImages(){
+      const r = document.documentElement.style;
+      r.setProperty('--front-img', CARD_IMAGES.front ? `url('${CARD_IMAGES.front}')` : 'none');
+      r.setProperty('--back-img', CARD_IMAGES.back ? `url('${CARD_IMAGES.back}')` : 'none');
+    }
+
+    const ruleEmoji = { A:'🤞', 2:'👉', 3:'🙋', 4:'🧎', 5:'👥', 6:'🎀', 7:'☝️', 8:'🧑‍🤝‍🧑', 9:'🎤', 10:'🌊', J:'🗂️', Q:'❓', K:'👑' };
+
+    const categoriesPool = [
+      "Dog breeds","Pizza toppings","Superheroes","Disney/Pixar movies","Board games",
+      "Countries in Europe","NBA teams","Car brands","Programming languages","Ice cream flavors",
+      "Video game characters","Musical instruments","Shapes","Fruits","Vegetables","Pokemon",
+      "U.S. states / Canadian provinces","Star Wars characters","Streaming shows","Coffee drinks",
+      "Chocolate brands","Cartoon characters","Mythical creatures","Sportswear brands","Fast food chains",
+      "Rappers","Pop stars","Bird species","Dinosaurs","Household chores","Things that are red",
+      "Mountains / hikes","Famous painters","Book genres","Breakfast foods","Types of pasta",
+      "Dog tricks","Hobbies","School subjects","Flowers","Sea creatures","Cookie types","Languages",
+      "Cities with a subway","Animals with stripes","Toys","Camping items","Card games","Weather words"
+    ];
+
+    const ruleSuggestionsPool = [
+      "No first names (use nicknames only)",
+      "No pointing (use elbows)",
+      "Speak in a movie quote once per turn",
+      "Tiny T-Rex arms while talking",
+      "British accent until your next draw",
+      "No using the word ‘drink’",
+      "Reverse the turn order",
+      "Clap before you speak",
+      "Thumb Master: last to put thumb on table drinks",
+      "No swearing",
+      "Rhyme every sentence end",
+      "Stand to speak",
+      "No looking at the card when you draw (someone else reads it)",
+      "Only whispering",
+      "Raise pinky when sipping",
+      "No touching hair",
+      "Questions must be answered with a question",
+      "Talk like a pirate",
+      "Ban a letter (e.g., no ‘S’ words)",
+      "Swap seats with someone of your choice"
+    ];
+
+    // Active state (local mode)
+    let deck = [];
+    let drawn = [];
+    let kingsDrawn = 0;
+    let featuredCategories = [];
+    let featuredRules = [];
+
+    let players = [];
+    let currentIndex = 0;
+    let clockwise = true;
+
+    let deferredPrompt = null; // PWA install
+
+    // Helpers
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    function buildDeck(){ const d=[]; for(const s of SUITS){ for(const r of RANKS){ d.push({rank:r, suit:s}); } } return d; }
+    function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+    function pickN(pool,n){ return shuffle(pool).slice(0,n); }
+
+    function toast(msg){ const t=document.createElement('div'); t.className='fixed bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm shadow-xl'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),1400); }
+
+    function updateCounters(){ $('#deckCount').textContent=deck.length; $('#drawnCount').textContent=drawn.length; $('#kingsCount').textContent=`${kingsDrawn} / 4`; }
+
+    function showCardFront(card){ $('#frontRank').textContent=card.rank; $('#frontSuit').textContent=card.suit; $('#frontCornerTL').textContent=card.rank; $('#frontCornerBR').textContent=card.rank; $('#frontSuitTL').textContent=card.suit; $('#frontSuitBR').textContent=card.suit; }
+
+    function flipOnce(){ const w=$('#cardWrapper'); w.classList.remove('flip'); void w.offsetWidth; w.classList.add('flip'); }
+
+    function ruleIcon(rank){
+      const e = ruleEmoji[rank] || '🎲';
+      return `<span class="inline-grid place-items-center w-10 h-10 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/40 dark:to-fuchsia-900/40 text-xl">${e}</span>`;
+    }
+
+    function actionTextFor(card){
+      const gentle=$('#safeToggle').checked; const base=DEFAULT_RULES[card.rank]; if(!base) return '';
+      let desc=base.desc.replaceAll('drink', gentle?'sip/penalty':'drink').replaceAll('sips', gentle?'sips/penalties':'sips').replaceAll('sip', gentle?'sip/penalty':'sip');
+      if(card.rank==='K'){ const remaining=4-(kingsDrawn+1); desc += remaining>0 ? ` There will be ${remaining} King(s) left after this.` : ` This is the final King!`; }
+      const current = players.length?`<div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Current: <b>${players[currentIndex]||'—'}</b></div>`:'';
+      return `<div class="flex items-start gap-3">${ruleIcon(card.rank)}<div class="leading-relaxed">${desc}</div></div>${current}`;
+    }
+
+    function miniCardEl(card){
+      const el = document.createElement('div');
+      el.className = 'mini-card rounded-xl shadow bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 text-white grid pop-in';
+      el.innerHTML = `<div class="self-start text-left p-1 text-xs font-bold">${card.rank}</div><div class="place-self-center -mt-4 text-lg font-black">${card.rank}${card.suit}</div><div class="self-end text-right p-1 text-[10px] opacity-80">${card.suit}</div>`;
+      return el;
+    }
+
+    function pushHistory(card){
+      const box=$('#history');
+      const el = miniCardEl(card);
+      box.prepend(el);
+      while(box.children.length>24){ box.lastElementChild.remove(); }
+    }
+
+    function renderCategories(){ const box=$('#categories'); box.innerHTML=''; featuredCategories.forEach(c=>{ const chip=document.createElement('button'); chip.className='px-3 py-1.5 rounded-full bg-white/70 hover:bg-white text-indigo-950 dark:text-indigo-100'; chip.textContent=c; chip.addEventListener('click',()=>{ navigator.clipboard?.writeText(c); toast(`Copied “${c}”`); }); box.appendChild(chip); }); }
+    function renderRuleIdeas(){ const ul=$('#ruleIdeas'); ul.innerHTML=''; featuredRules.forEach(r=>{ const li=document.createElement('li'); li.innerHTML=`<span>${r}</span>`; ul.appendChild(li); }); }
+
+    function showPanel(el){ el.classList.remove('hiddenish'); }
+    function hidePanel(el){ el.classList.add('hiddenish'); }
+
+    // Players (persisted)
+    function savePlayers(){ localStorage.setItem('kc_players', JSON.stringify({players,currentIndex,clockwise})); }
+    function loadPlayers(){ try{ const d=JSON.parse(localStorage.getItem('kc_players')); if(d){ players=d.players||[]; currentIndex=d.currentIndex||0; clockwise=d.clockwise??true; } }catch{} renderPlayers(); }
+    function renderPlayers(){ const ul=$('#playersList'); ul.innerHTML=''; if(!players.length){ $('#currentPlayerBox').textContent='No players yet.'; return; } $('#currentPlayerBox').innerHTML=`Current: <b>${players[currentIndex]}</b> • Direction: <b>${clockwise?'↻':'↺'}</b>`; players.forEach((name,i)=>{ const li=document.createElement('li'); li.className='flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-800'; li.innerHTML=`<span class="w-6 text-center text-xs text-slate-500 dark:text-slate-400">${i+1}</span><span class="flex-1">${name}</span><div class="flex items-center gap-1"><button class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" data-up="${i}">▲</button><button class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" data-down="${i}">▼</button><button class="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200" data-del="${i}">✕</button></div>`; ul.appendChild(li); }); $$('[data-up]').forEach(b=>b.addEventListener('click',e=>{ const i=+e.currentTarget.getAttribute('data-up'); if(i>0){ [players[i-1],players[i]]=[players[i],players[i-1]]; if(currentIndex===i) currentIndex=i-1; else if(currentIndex===i-1) currentIndex=i; savePlayers(); renderPlayers(); } })); $$('[data-down]').forEach(b=>b.addEventListener('click',e=>{ const i=+e.currentTarget.getAttribute('data-down'); if(i<players.length-1){ [players[i+1],players[i]]=[players[i],players[i+1]]; if(currentIndex===i) currentIndex=i+1; else if(currentIndex===i+1) currentIndex=i; savePlayers(); renderPlayers(); } })); $$('[data-del]').forEach(b=>b.addEventListener('click',e=>{ const i=+e.currentTarget.getAttribute('data-del'); players.splice(i,1); if(currentIndex>=players.length) currentIndex=Math.max(0,players.length-1); savePlayers(); renderPlayers(); })); }
+    function nextTurn(){ if(!players.length) return; currentIndex=(currentIndex+(clockwise?1:-1)+players.length)%players.length; savePlayers(); renderPlayers(); }
+    function prevTurn(){ if(!players.length) return; currentIndex=(currentIndex-(clockwise?1:-1)+players.length)%players.length; savePlayers(); renderPlayers(); }
+
+    // Theme & PWA
+    function setTheme(t){ const dark=t==='dark'; document.documentElement.classList.toggle('dark',dark); localStorage.setItem('kc_theme',dark?'dark':'light'); $('#themeToggle').textContent=dark?'☀️':'🌙'; }
+    function initTheme(){ const saved=localStorage.getItem('kc_theme'); if(saved){ setTheme(saved); } else { setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); } }
+    function registerSW(){ if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); } }
+    window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferredPrompt=e; $('#installBtn').classList.remove('hidden'); });
+
+    // Share (players + featured lists)
+    function base64urlEncode(str){ return btoa(unescape(encodeURIComponent(str))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_'); }
+    function base64urlDecode(str){ str=str.replace(/-/g,'+').replace(/_/g,'/'); const pad=str.length%4; if(pad) str+='='.repeat(4-pad); return decodeURIComponent(escape(atob(str))); }
+    function serializeState(){ return { players, currentIndex, clockwise, featuredCategories, featuredRules }; }
+    function applyState(s){ try{ if(Array.isArray(s.players)){ players=s.players.slice(0,20); currentIndex=Math.min(Math.max(0,s.currentIndex||0),Math.max(0,players.length-1)); clockwise=s.clockwise!==false; renderPlayers(); } if(Array.isArray(s.featuredCategories)&&s.featuredCategories.length){ featuredCategories=s.featuredCategories.slice(0,4); renderCategories(); } if(Array.isArray(s.featuredRules)&&s.featuredRules.length){ featuredRules=s.featuredRules.slice(0,8); renderRuleIdeas(); } toast('Loaded shared game'); }catch{} }
+    function shareUrl(){ const url=new URL(location.href); url.searchParams.set('s', base64urlEncode(JSON.stringify(serializeState()))); return url.toString(); }
+    async function doShare(){ const url=shareUrl(); try{ if(navigator.share){ await navigator.share({title:"Play King's Cup", url}); } else { await navigator.clipboard?.writeText(url); toast('Link copied'); } }catch{ await navigator.clipboard?.writeText(url); toast('Link copied'); } }
+    function loadFromUrl(){ const s=new URL(location.href).searchParams.get('s'); if(!s) return; try{ applyState(JSON.parse(base64urlDecode(s))); }catch{} }
+
+    // Game Flow (LOCAL)
+    async function newGame(){
+      deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0;
+      featuredCategories=pickN(categoriesPool,4);
+      featuredRules=pickN(ruleSuggestionsPool,8);
+      // Try AI enrichments (non-blocking)
+      loadAICategories();
+      loadAIRuleIdeas();
+      document.getElementById('history').innerHTML='';
+      updateCounters(); renderCategories(); renderRuleIdeas();
+      document.getElementById('actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>';
+      document.getElementById('card').style.transform='rotateY(0deg)';
+      document.getElementById('cardWrapper').classList.remove('flip');
+      hidePanel(document.getElementById('panelCategories'));
+      hidePanel(document.getElementById('panelRuleIdeas'));
+    }
+
+    function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class=\"text-slate-500 dark:text-slate-400\">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class=\"mb-1 text-sm text-slate-500 dark:text-slate-400\">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); const w = document.getElementById('cardWrapper'); w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true});
+      // optional AI host line
+      maybeAIHostline({ rank: card.rank, suit: card.suit }); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
+      // Dynamic panels
+      if(card.rank==='J'){
+        // ensure categories are fresh; if none yet, try AI now
+        if(!featuredCategories || featuredCategories.length===0) await loadAICategories();
+        showPanel(document.getElementById('panelCategories')); renderCategories(); hidePanel(document.getElementById('panelRuleIdeas'));
+      }
+      else if(card.rank==='K'){
+        if(!featuredRules || featuredRules.length===0) await loadAIRuleIdeas();
+        showPanel(document.getElementById('panelRuleIdeas')); renderRuleIdeas(); hidePanel(document.getElementById('panelCategories'));
+      }
+      else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+    }
+
+    function backOne(){
+      if(!drawn.length){ toast('Nothing to undo'); return; }
+      const last = drawn.pop();
+      if(last.rank==='K' && kingsDrawn>0) kingsDrawn--;
+      deck.push(last); // put it back on top
+      updateCounters();
+      const h = $('#history'); if(h.firstElementChild) h.removeChild(h.firstElementChild);
+      const prev = drawn[drawn.length-1];
+      if(prev){
+        showCardFront(prev);
+        $('#actionText').innerHTML = `<div class=\"mb-1 text-sm text-slate-500 dark:text-slate-400\">${prev.rank}${prev.suit} – <b>${DEFAULT_RULES[prev.rank]?.name||''}</b></div>` + actionTextFor(prev);
+        if(prev.rank==='J'){ showPanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+        else if(prev.rank==='K'){ showPanel($('#panelRuleIdeas')); hidePanel($('#panelCategories')); }
+        else { hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+      } else {
+        $('#frontRank').textContent='?'; $('#frontSuit').textContent='♠'; $('#frontCornerTL').textContent='★'; $('#frontCornerBR').textContent='★'; $('#frontSuitTL').textContent='♣'; $('#frontSuitBR').textContent='♣';
+        $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin.</span>';
+        hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas'));
+      }
+      if(players.length) prevTurn();
+    }
+
+    // Events (Local)
+    document.getElementById('backBtn').addEventListener('click', backOne);
+    document.getElementById('cardWrapper').addEventListener('click', drawCard);
+    document.getElementById('cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); drawCard(); }});
+    document.getElementById('reshuffleBtn').addEventListener('click', ()=> newGame());
+    document.getElementById('resetBtn').addEventListener('click', ()=> newGame());
+    document.getElementById('safeToggle').addEventListener('change', ()=>{ if(drawn.length){ const last=drawn[drawn.length-1]; document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last); } });
+    document.getElementById('rerollCats').addEventListener('click', ()=>{ featuredCategories=pickN(categoriesPool,4); renderCategories(); toast('Fresh categories'); });
+    document.getElementById('rerollRules').addEventListener('click', ()=>{ featuredRules=pickN(ruleSuggestionsPool,8); renderRuleIdeas(); toast('New ideas'); });
+
+    // Header buttons
+    document.getElementById('playersBtn').addEventListener('click', ()=>{ document.getElementById('playersSheet').classList.remove('hidden'); });
+    document.getElementById('playersClose').addEventListener('click', ()=>{ document.getElementById('playersSheet').classList.add('hidden'); });
+    document.getElementById('dirToggle').addEventListener('click', ()=>{ clockwise=!clockwise; savePlayers(); renderPlayers(); });
+    document.getElementById('nextTurn').addEventListener('click', nextTurn);
+    document.getElementById('prevTurn').addEventListener('click', prevTurn);
+
+    document.getElementById('themeToggle').addEventListener('click', ()=>{ const dark=document.documentElement.classList.contains('dark'); setTheme(dark?'light':'dark'); });
+    document.getElementById('shareBtn').addEventListener('click', doShare);
+    document.getElementById('installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; document.getElementById('installBtn').classList.add('hidden'); });
+
+    // Room button: Pro gate
+    const roomBtn = document.getElementById('roomBtn');
+    const proSheet = document.getElementById('proSheet');
+    const proClose = document.getElementById('proClose');
+
+    function showProSheet(){ proSheet.classList.remove('hidden'); metrics('paywall_open'); }
+    function hideProSheet(){ proSheet.classList.add('hidden'); }
+
+    if(!window.KC_PRO){
+      roomBtn.classList.add('cursor-not-allowed','opacity-60','text-slate-400');
+      roomBtn.addEventListener('click', showProSheet);
+      document.getElementById('roomBadge').classList.add('hidden');
+      document.getElementById('presenceRow').classList.add('hidden');
+    } else {
+      enableProUI();
+    }
+
+    proClose?.addEventListener('click', hideProSheet);
+
+    // Buy buttons
+    function openCheckout(link){
+      if(!link){ toast('Add your Stripe Payment Link URL'); return; }
+      metrics('checkout_start', { plan: 'unknown' });
+      window.open(link, '_blank');
+    }
+    document.getElementById('buyPassBtn')?.addEventListener('click', ()=>{ metrics('checkout_start', { plan: 'party_pass' }); openCheckout(window.STRIPE_LINK_PARTY_PASS); });
+    document.getElementById('buyLifetimeBtn')?.addEventListener('click', ()=>{ metrics('checkout_start', { plan: 'lifetime' }); openCheckout(window.STRIPE_LINK_LIFETIME); });
+
+    // Redeem (DEV/testing)
+    document.getElementById('redeemBtn')?.addEventListener('click', ()=>{
+      const code = (document.getElementById('redeemCode').value||'').trim();
+      if(!code) return toast('Enter a code');
+      // simple demo: any non-empty code unlocks
+      unlockPro('code');
+    });
+
+    // Init
+    function init(){
+      initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame();
+      checkUnlockFromURL(); // auto-unlock if redirected from Stripe
+    }
+    init();
+  </script>
+
+  <!-- Realtime (Firebase) — kept but fully disabled unless KC_PRO=true -->
+  <script type="module">
+    if(!window.KC_PRO){ console.info('[KC] Realtime disabled — Pro only.'); }
+    else {
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+      import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+      import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+      const cfg = window.FIREBASE_CONFIG;
+      if(!cfg){ console.info('[KC] No FIREBASE_CONFIG; realtime idle.'); }
+      else {
+        const app = initializeApp(cfg);
+        const auth = getAuth(app);
+        const db   = getFirestore(app);
+        await signInAnonymously(auth).catch(()=>{});
+
+        let ROOM_ID = null;
+        function randCode(len=5){ return Array.from(crypto.getRandomValues(new Uint8Array(len))).map(n => "ABCDEFGHJKLMNPQRSTUVWXYZ"[n%25]).join(""); }
+
+        async function createRoom({name}){
+          const code = randCode(5);
+          ROOM_ID = code;
+          const ref = doc(db, 'rooms', ROOM_ID);
+          await setDoc(ref, {
+            createdAt: Date.now(),
+            hostUid: auth.currentUser?.uid || 'host',
+            code,
+            players: [{ uid: auth.currentUser?.uid || 'host', name, lastSeen: Date.now() }],
+            state: {
+              deck: (function(){ const d=[]; for(const s of ["♠","♥","♦","♣"]) for(const r of ["A","2","3","4","5","6","7","8","9","10","J","Q","K"]) d.push({rank:r,suit:s}); return d; })().sort(()=>Math.random()-.5),
+              drawn: [], kingsDrawn: 0,
+              featuredCategories: [],
+              featuredRules: [],
+              panels: { showCats:false, showRules:false },
+              safe: true, turnIndex: 0, clockwise: true
+            }
+          });
+          document.getElementById('roomBadge').classList.remove('hidden');
+          document.getElementById('roomCodeText').textContent = code;
+          subscribe();
+          return code;
+        }
+
+        async function joinRoom({code, name}){
+          ROOM_ID = code.toUpperCase();
+          const ref = doc(db, 'rooms', ROOM_ID);
+          const snap = await getDoc(ref);
+          if(!snap.exists()) throw new Error('Room not found');
+          const data = snap.data();
+          const players = (data.players||[]).filter(p=>p.uid!==auth.currentUser?.uid);
+          players.push({ uid: auth.currentUser?.uid || Math.random().toString(36).slice(2), name, lastSeen: Date.now() });
+          await updateDoc(ref, { players });
+          document.getElementById('roomBadge').classList.remove('hidden');
+          document.getElementById('roomCodeText').textContent = ROOM_ID;
+          subscribe();
+        }
+
+        function subscribe(){
+          const ref = doc(db, 'rooms', ROOM_ID);
+          onSnapshot(ref, (snap)=>{
+            if(!snap.exists()) return;
+            const data = snap.data();
+            // You can map remote state to UI here when Pro is enabled
+          });
+        }
+
+        // Hook up basic create/join if you turn Pro on
+        const sheet = document.getElementById('roomSheet');
+        if(sheet){
+          const close = document.getElementById('roomClose');
+          close?.addEventListener('click', ()=> sheet.classList.add('hidden'));
+        }
+        window.realtime = { createRoom, joinRoom };
+      }
+    }
+  </script>
+
+
+</body>
+</html>
+</html>
