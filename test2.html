@@ -71,71 +71,78 @@
   <!-- Main (single column, mobile-first) -->
   <main class="max-w-2xl mx-auto px-4 py-6 space-y-4">
     <!-- Card (tap to draw) -->
-    <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 card-3d">
-      <div id="cardWrapper" role="button" tabindex="0" aria-label="Draw card" class="relative mx-auto w-[240px] h-[336px] md:w-[280px] md:h-[392px] cursor-pointer select-none">
-        <div id="card" class="card-face absolute inset-0 rounded-2xl shadow-xl">
-          <!-- FRONT -->
-          <div class="face-front absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 p-4 text-white grid">
-            <div class="self-start text-left">
-              <div id="frontCornerTL" class="text-2xl font-extrabold">★</div>
-              <div id="frontSuitTL" class="-mt-1 opacity-80">♣︎</div>
-            </div>
-            <div class="place-self-center text-center">
-              <div id="frontRank" class="text-7xl font-black drop-shadow">?</div>
-              <div id="frontSuit" class="text-4xl opacity-90">♠︎</div>
-            </div>
-            <div class="self-end text-right">
-              <div id="frontCornerBR" class="text-2xl font-extrabold">★</div>
-              <div id="frontSuitBR" class="-mt-1 opacity-80">♣︎</div>
-            </div>
-          </div>
-          <!-- BACK -->
-          <div class="face-back absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,.25),transparent_40%),radial-gradient(circle_at_70%_80%,rgba(255,255,255,.15),transparent_40%),linear-gradient(135deg,#111827,#4c1d95)] grid place-items-center">
-            <div class="text-center">
-              <div class="text-white/90 text-sm">Tap to draw</div>
-              <div class="text-white text-4xl font-black">K♛C</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Controls row under card: Back only (tap card to draw) -->
-      <div class="mt-4 flex items-center justify-center gap-3">
-        <button id="backBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Undo last draw" aria-label="Undo last">↩️</button>
-      </div>
-      <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
-        <div class="flex gap-3"><span>Deck <b id="deckCount">52</b></span><span>Drawn <b id="drawnCount">0</b></span><span>Kings Cup <b id="kingsCount">0 / 4</b></span></div>
-        <div class="flex items-center gap-3">
-          <label class="inline-flex items-center gap-2"><input id="safeToggle" type="checkbox" class="h-4 w-4 rounded border-slate-300 dark:border-slate-700" /><span>Gentle mode</span></label>
-          <button id="reshuffleBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Reshuffle</button>
-          <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Reset</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Rule area directly under controls (with a fun visual) -->
     <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
-      <div id="actionText" class="text-base text-slate-700 dark:text-slate-300"></div>
-    </section>
+      <!-- Card + Helpers side-by-side on desktop; stacked on mobile -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- LEFT: Card (tap to draw) -->
+        <div class="card-3d">
+          <div id="cardWrapper" role="button" tabindex="0" aria-label="Draw card" class="relative mx-auto w-[240px] h-[336px] md:w-[280px] md:h-[392px] cursor-pointer select-none">
+            <div id="card" class="card-face absolute inset-0 rounded-2xl shadow-xl">
+              <!-- FRONT -->
+              <div class="face-front absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 p-4 text-white grid">
+                <div class="self-start text-left">
+                  <div id="frontCornerTL" class="text-2xl font-extrabold">★</div>
+                  <div id="frontSuitTL" class="-mt-1 opacity-80">♣︎</div>
+                </div>
+                <div class="place-self-center text-center">
+                  <div id="frontRank" class="text-7xl font-black drop-shadow">?</div>
+                  <div id="frontSuit" class="text-4xl opacity-90">♠︎</div>
+                </div>
+                <div class="self-end text-right">
+                  <div id="frontCornerBR" class="text-2xl font-extrabold">★</div>
+                  <div id="frontSuitBR" class="-mt-1 opacity-80">♣︎</div>
+                </div>
+              </div>
+              <!-- BACK -->
+              <div class="face-back absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,.25),transparent_40%),radial-gradient(circle_at_70%_80%,rgba(255,255,255,.15),transparent_40%),linear-gradient(135deg,#111827,#4c1d95)] grid place-items-center">
+                <div class="text-center">
+                  <div class="text-white/90 text-sm">Tap to draw</div>
+                  <div class="text-white text-4xl font-black">K♛C</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Controls row under card: Back only (tap card to draw) -->
+          <div class="mt-4 flex items-center justify-center gap-3">
+            <button id="backBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Undo last draw" aria-label="Undo last">↩️</button>
+          </div>
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <div class="flex gap-3"><span>Deck <b id="deckCount">52</b></span><span>Drawn <b id="drawnCount">0</b></span><span>Kings Cup <b id="kingsCount">0 / 4</b></span></div>
+            <div class="flex items-center gap-3">
+              <label class="inline-flex items-center gap-2"><input id="safeToggle" type="checkbox" class="h-4 w-4 rounded border-slate-300 dark:border-slate-700" /><span>Gentle mode</span></label>
+              <button id="reshuffleBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Reshuffle</button>
+              <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Reset</button>
+            </div>
+          </div>
+        </div>
 
-    <!-- Category helper: only on Jack -->
-    <section id="panelCategories" class="panel hiddenish p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="font-semibold text-indigo-950 dark:text-indigo-100">Categories</h2>
-        <button id="rerollCats" class="text-indigo-700 dark:text-indigo-300 text-sm">Reroll</button>
+        <!-- RIGHT: Rule area + dynamic helpers (Categories/Rule Ideas) -->
+        <div class="space-y-4">
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+            <div id="actionText" class="text-base text-slate-700 dark:text-slate-300"></div>
+          </div>
+
+          <!-- Category helper: only on Jack -->
+          <section id="panelCategories" class="panel hiddenish p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="font-semibold text-indigo-950 dark:text-indigo-100">Categories</h2>
+              <button id="rerollCats" class="text-indigo-700 dark:text-indigo-300 text-sm">Reroll</button>
+            </div>
+            <p class="text-xs text-indigo-900/80 dark:text-indigo-200/80">Pick one of these and go around. First miss sips/penalty.</p>
+            <div id="categories" class="mt-3 flex flex-wrap gap-2"></div>
+          </section>
+
+          <!-- New Rule suggestions: appear when a King is drawn -->
+          <section id="panelRuleIdeas" class="panel hiddenish p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="font-semibold text-amber-900 dark:text-amber-100">Try a New Rule</h2>
+              <button id="rerollRules" class="text-amber-800/80 dark:text-amber-200/90 text-sm">Shuffle</button>
+            </div>
+            <ul id="ruleIdeas" class="text-sm text-amber-900/90 dark:text-amber-200/90 space-y-2"></ul>
+          </section>
+        </div>
       </div>
-      <p class="text-xs text-indigo-900/80 dark:text-indigo-200/80">Pick one of these and go around. First miss sips/penalty.</p>
-      <div id="categories" class="mt-3 flex flex-wrap gap-2"></div>
     </section>
-
-    <!-- New Rule suggestions: appear when a King is drawn -->
-    <section id="panelRuleIdeas" class="panel hiddenish p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="font-semibold text-amber-900 dark:text-amber-100">Try a New Rule</h2>
-        <button id="rerollRules" class="text-amber-800/80 dark:text-amber-200/90 text-sm">Shuffle</button>
-      </div>
-      <ul id="ruleIdeas" class="text-sm text-amber-900/90 dark:text-amber-200/90 space-y-2"></ul>
-    </section>
-
     <!-- History as mini cards -->
     <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
       <h3 class="font-semibold">History</h3>
@@ -344,17 +351,7 @@
       }
     }
 
-    async function maybeAIHostline(lastCard){
-      const safe = document.getElementById('safeToggle')?.checked ?? true;
-      const data = await aiFetch('hostline', { safeMode: !!safe, lastCard, players, kingsDrawn, count: drawn.length });
-      if(data && data.line){
-        const box = document.getElementById('actionText');
-        const p = document.createElement('div');
-        p.className = 'mt-2 text-sm italic text-slate-600 dark:text-slate-300';
-        p.textContent = 'MC: ' + data.line;
-        box.appendChild(p);
-      }
-    }
+        }
 
     // Active state
     let deck = [];
@@ -502,9 +499,7 @@
       }
       else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
 
-      // optional AI host line
-      maybeAIHostline({ rank: card.rank, suit: card.suit });
-    }
+          }
 
     function backOne(){
       if(!drawn.length){ toast('Nothing to undo'); return; }
