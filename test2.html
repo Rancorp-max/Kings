@@ -421,7 +421,31 @@
     }
 
     function renderCategories(){ const box=$('#categories'); box.innerHTML=''; featuredCategories.forEach(c=>{ const chip=document.createElement('button'); chip.className='px-3 py-1.5 rounded-full bg-white/70 hover:bg-white text-indigo-950 dark:text-indigo-100'; chip.textContent=c; chip.addEventListener('click',()=>{ navigator.clipboard?.writeText(c); toast(`Copied “${c}”`); }); box.appendChild(chip); }); }
-    function renderRuleIdeas(){ const ul=$('#ruleIdeas'); ul.innerHTML=''; featuredRules.forEach(r=>{ const li=document.createElement('li'); li.innerHTML=`<span>${r}</span>`; ul.appendChild(li); }); }
+    function renderRuleIdeas(){
+      const ul = document.getElementById('ruleIdeas');
+      ul.innerHTML = '';
+      (featuredRules||[]).forEach((r)=>{
+        const isObj = r && typeof r === 'object';
+        const shortTxt = isObj ? (r.short||'Rule idea') : (r||'Rule idea');
+        const longTxt  = isObj ? (r.long||'') : '';
+        const li = document.createElement('li');
+        li.className = 'p-2 rounded-lg bg-white/70 dark:bg-slate-800/40 border border-amber-200/60 dark:border-amber-800/60';
+        li.innerHTML = `
+          <div class="flex items-start gap-2">
+            <span class="inline-grid place-items-center w-8 h-8 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40">💡</span>
+            <div class="leading-snug">
+              <div class="font-medium">${shortTxt}</div>
+              ${longTxt ? `<div class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">${longTxt}</div>` : ''}
+            </div>
+          </div>`;
+        li.addEventListener('click', ()=>{
+          const copy = longTxt || shortTxt;
+          navigator.clipboard?.writeText(copy);
+          toast('Copied rule idea');
+        });
+        ul.appendChild(li);
+      });
+    }</span>`; ul.appendChild(li); }); }
 
     function showPanel(el){ el.classList.remove('hiddenish'); }
     function hidePanel(el){ el.classList.add('hiddenish'); }
@@ -509,7 +533,17 @@
     document.getElementById('cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); drawCard(); }});
     document.getElementById('reshuffleBtn').addEventListener('click', ()=> newGame());
     document.getElementById('resetBtn').addEventListener('click', ()=> newGame());
-    document.getElementById('safeToggle').addEventListener('change', ()=>{ if(drawn.length){ const last=drawn[drawn.length-1]; document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last); } });
+    document.getElementById('safeToggle').addEventListener('change', ()=>{
+      // Clear AI caches so tone updates immediately
+      try{ localStorage.removeItem('kc_ai_categories'); localStorage.removeItem('kc_ai_rules'); }catch{}
+      // Refresh panels if open
+      loadAICategories();
+      loadAIRuleIdeas();
+      if(drawn.length){
+        const last=drawn[drawn.length-1];
+        document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last);
+      }
+    });
     document.getElementById('rerollCats').addEventListener('click', ()=>{ featuredCategories=pickN(categoriesPool,4); renderCategories(); toast('Fresh categories'); });
     document.getElementById('rerollRules').addEventListener('click', ()=>{ featuredRules=pickN(ruleSuggestionsPool,8); renderRuleIdeas(); toast('New ideas'); });
 
@@ -644,7 +678,6 @@
       }
     }
   </script>
-
 
 </body>
 </html>
