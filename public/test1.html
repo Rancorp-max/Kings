@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>King's Cup — Party Web App</title>
+  <meta name="description" content="Mobile-friendly King's Cup web app. Tap the card to draw. Jack reveals Categories; King suggests New Rules. Shareable link. Optional realtime rooms." />
+  <meta name="theme-color" content="#7c3aed" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{ --brand:#7c3aed; --brand-accent:#22c55e; --brand-warm:#f59e0b; --front-img:none; --back-img:none; }
+    html,body{ font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    .card-3d{ perspective: 1200px; }
+    .card-face{ transform-style: preserve-3d; transition: transform .5s ease; position: relative; }
+    .flip .card-face{ transform: rotateY(180deg); }
+    .face-front, .face-back{ backface-visibility: hidden; position: relative; }
+    .face-back{ transform: rotateY(180deg); }
+    /* Custom face images centered behind content */
+    .face-front::before, .face-back::before{ content:""; position:absolute; inset:0; background-repeat:no-repeat; background-position:center; background-size:contain; pointer-events:none; z-index:0; }
+    .face-front::before{ background-image: var(--front-img); }
+    .face-back::before{ background-image: var(--back-img); }
+    .face-front > *, .face-back > * { position: relative; z-index: 1; }
+
+    .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:.9rem; }
+    .panel{ transition: all .25s ease; }
+    .panel.hiddenish{ opacity:0; max-height:0; overflow:hidden; pointer-events:none; }
+    .mini-card{ width:3.25rem; height:4.5rem; }
+
+    /* Between-card animation on the wrapper */
+    @keyframes card-swap{ 0%{ transform: translateY(0) scale(1); } 50%{ transform: translateY(-6px) scale(1.03);} 100%{ transform: translateY(0) scale(1);} }
+    .card-swap{ animation: card-swap 320ms ease; }
+
+    /* Pop-in for history minis */
+    @keyframes pop{ 0%{ transform: scale(.85); opacity:0; } 100%{ transform: scale(1); opacity:1; } }
+    .pop-in{ animation: pop 180ms ease-out; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <!-- Header -->
+  <header class="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/90 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-white font-black">K</div>
+      <h1 class="flex-1 text-lg font-extrabold tracking-tight">King's Cup</h1>
+      <span id="roomBadge" class="hidden text-xs px-2.5 py-1 rounded-full bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200">ROOM: <b id="roomCodeText">LOCAL</b></span>
+      <button id="roomBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Room">🧩</button>
+      <button id="playersBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Players">👥</button>
+      <button id="shareBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Share">🔗</button>
+      <button id="installBtn" class="hidden icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Install">⬇️</button>
+      <button id="themeToggle" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Theme">🌙</button>
+    </div>
+  </header>
+
+  <!-- Main (single column, mobile-first) -->
+  <main class="max-w-2xl mx-auto px-4 py-6 space-y-4">
+    <!-- Card (tap to draw) -->
+    <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 card-3d">
+      <div id="cardWrapper" role="button" tabindex="0" aria-label="Draw card" class="relative mx-auto w-[240px] h-[336px] md:w-[280px] md:h-[392px] cursor-pointer select-none">
+        <div id="card" class="card-face absolute inset-0 rounded-2xl shadow-xl">
+          <!-- FRONT -->
+          <div class="face-front absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 p-4 text-white grid">
+            <div class="self-start text-left">
+              <div id="frontCornerTL" class="text-2xl font-extrabold">★</div>
+              <div id="frontSuitTL" class="-mt-1 opacity-80">♣︎</div>
+            </div>
+            <div class="place-self-center text-center">
+              <div id="frontRank" class="text-7xl font-black drop-shadow">?</div>
+              <div id="frontSuit" class="text-4xl opacity-90">♠︎</div>
+            </div>
+            <div class="self-end text-right">
+              <div id="frontCornerBR" class="text-2xl font-extrabold">★</div>
+              <div id="frontSuitBR" class="-mt-1 opacity-80">♣︎</div>
+            </div>
+          </div>
+          <!-- BACK -->
+          <div class="face-back absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,.25),transparent_40%),radial-gradient(circle_at_70%_80%,rgba(255,255,255,.15),transparent_40%),linear-gradient(135deg,#111827,#4c1d95)] grid place-items-center">
+            <div class="text-center">
+              <div class="text-white/90 text-sm">Tap to draw</div>
+              <div class="text-white text-4xl font-black">K♛C</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Controls row under card: Back only (tap card to draw) -->
+      <div class="mt-4 flex items-center justify-center gap-3">
+        <button id="backBtn" class="icon-btn bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Undo last draw" aria-label="Undo last">↩️</button>
+      </div>
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <div class="flex gap-3"><span>Deck <b id="deckCount">52</b></span><span>Drawn <b id="drawnCount">0</b></span><span>Kings Cup <b id="kingsCount">0 / 4</b></span></div>
+        <div class="flex items-center gap-3">
+          <label class="inline-flex items-center gap-2"><input id="safeToggle" type="checkbox" class="h-4 w-4 rounded border-slate-300 dark:border-slate-700" /><span>Gentle mode</span></label>
+          <button id="reshuffleBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Reshuffle</button>
+          <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Rule area directly under controls (with a fun visual) -->
+    <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+      <div id="actionText" class="text-base text-slate-700 dark:text-slate-300"></div>
+    </section>
+
+    <!-- Category helper: only on Jack -->
+    <section id="panelCategories" class="panel hiddenish p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-indigo-950 dark:text-indigo-100">Categories</h2>
+        <button id="rerollCats" class="text-indigo-700 dark:text-indigo-300 text-sm">Reroll</button>
+      </div>
+      <p class="text-xs text-indigo-900/80 dark:text-indigo-200/80">Pick one of these and go around. First miss sips/penalty.</p>
+      <div id="categories" class="mt-3 flex flex-wrap gap-2"></div>
+    </section>
+
+    <!-- New Rule suggestions: appear when a King is drawn -->
+    <section id="panelRuleIdeas" class="panel hiddenish p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-amber-900 dark:text-amber-100">Try a New Rule</h2>
+        <button id="rerollRules" class="text-amber-800/80 dark:text-amber-200/90 text-sm">Shuffle</button>
+      </div>
+      <ul id="ruleIdeas" class="text-sm text-amber-900/90 dark:text-amber-200/90 space-y-2"></ul>
+    </section>
+
+    <!-- History as mini cards -->
+    <section class="p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
+      <h3 class="font-semibold">History</h3>
+      <div id="history" class="mt-3 grid grid-cols-6 sm:grid-cols-8 gap-2"></div>
+    </section>
+  </main>
+
+  <!-- Players Sheet (mobile-friendly) -->
+  <div id="playersSheet" class="fixed inset-0 z-30 hidden">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <div class="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-bold">Players & Turn</h2>
+        <div class="flex items-center gap-2 text-sm">
+          <button id="dirToggle" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Toggle direction">↻</button>
+          <button id="prevTurn" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Previous">◀</button>
+          <button id="nextTurn" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Next">▶</button>
+          <button id="playersClose" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" title="Close">✕</button>
+        </div>
+      </div>
+      <form id="playerForm" class="flex gap-2 mb-3">
+        <input id="playerName" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" placeholder="Add player name" />
+        <button class="px-3 py-2 rounded-lg bg-violet-600 text-white">Add</button>
+      </form>
+      <div id="currentPlayerBox" class="text-sm text-slate-600 dark:text-slate-300 mb-2">No players yet.</div>
+      <ul id="playersList" class="space-y-2"></ul>
+    </div>
+  </div>
+
+  <!-- Room Sheet -->
+  <div id="roomSheet" class="fixed inset-0 z-30 hidden">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <div class="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="font-bold">Room</h2>
+        <button id="roomClose" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">✕</button>
+      </div>
+      <div id="roomStatus" class="text-sm text-slate-600 dark:text-slate-300">Mode: <b id="netMode">Local</b></div>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <h3 class="font-semibold mb-2">Create</h3>
+          <input id="hostName" class="w-full mb-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" placeholder="Your name" />
+          <button id="createRoomBtn" class="w-full px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white">Create room</button>
+          <div id="createHint" class="mt-2 text-xs text-slate-500">Requires Firebase config. Falls back to Local if absent.</div>
+        </div>
+        <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <h3 class="font-semibold mb-2">Join</h3>
+          <input id="joinName" class="w-full mb-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" placeholder="Your name" />
+          <input id="joinCode" class="w-full mb-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 uppercase" placeholder="ROOM CODE" />
+          <button id="joinRoomBtn" class="w-full px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">Join room</button>
+        </div>
+      </div>
+      <div id="activeRoomBox" class="hidden p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between">
+          <div>Room code: <b id="activeRoomCode">—</b> • Host: <b id="activeRoomHost">—</b></div>
+          <div class="flex items-center gap-2">
+            <button id="copyRoomLink" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">Copy Link</button>
+            <button id="leaveRoomBtn" class="px-2 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200">Leave</button>
+          </div>
+        </div>
+        <div id="roomPlayers" class="mt-2 text-sm"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="max-w-2xl mx-auto px-4 pb-10 text-center text-xs text-slate-500 dark:text-slate-400">
+    Built for friends & laughs. Works offline. Realtime rooms optional (Firebase). 
+  </footer>
+
+  <script>
+    // --- Data & Rules ---
+    const SUITS = ["♠", "♥", "♦", "♣"]; // display only
+    const RANKS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+
+    const DEFAULT_RULES = {
+      A: { name: "Never Have I Ever", desc: "Each player holds up 3 fingers (or 5). The drawer starts: say something you’ve never done. Anyone who has, takes a sip/penalty and lowers a finger." },
+      2: { name: "You", desc: "Choose someone to take a sip/penalty." },
+      3: { name: "Me", desc: "You take a sip/penalty." },
+      4: { name: "Floor", desc: "Last to touch the floor takes a sip/penalty." },
+      5: { name: "Guys", desc: "All who identify as guys take a sip/penalty. (Alt: anyone wearing jeans)" },
+      6: { name: "Girls", desc: "All who identify as girls take a sip/penalty. (Alt: anyone with glasses)" },
+      7: { name: "Heaven", desc: "Last to point upward takes a sip/penalty." },
+      8: { name: "Mate", desc: "Pick a mate; you two take sips/penalties together for the rest of the game." },
+      9: { name: "Rhyme", desc: "Say a word; go around rhyming it. First stumble or repeat takes a sip/penalty." },
+      10: { name: "Waterfall", desc: "Everyone starts sipping/penalty at once. You can stop only when the person to your right stops." },
+      J: { name: "Categories", desc: "Pick a category and go around naming items in it. First miss takes a sip/penalty." },
+      Q: { name: "Question Master", desc: "If players answer your questions, they take a sip/penalty. Lasts until the next Queen is drawn." },
+      K: { name: "King’s Cup", desc: "First three Kings add a splash to the Cup; the fourth King drinks it (or a big sip in Gentle mode)." },
+    };
+
+    // Optional custom card face images (replace with your paths)
+    const CARD_IMAGES = { front: "", back: "" }; // e.g., "/cards/front.png", "/cards/back.png"
+    function applyCardImages(){
+      const r = document.documentElement.style;
+      r.setProperty('--front-img', CARD_IMAGES.front ? `url('${CARD_IMAGES.front}')` : 'none');
+      r.setProperty('--back-img', CARD_IMAGES.back ? `url('${CARD_IMAGES.back}')` : 'none');
+    }
+
+    const ruleEmoji = { A:'🤞', 2:'👉', 3:'🙋', 4:'🧎', 5:'👥', 6:'🎀', 7:'☝️', 8:'🧑‍🤝‍🧑', 9:'🎤', 10:'🌊', J:'🗂️', Q:'❓', K:'👑' };
+
+    const categoriesPool = [
+      "Dog breeds","Pizza toppings","Superheroes","Disney/Pixar movies","Board games",
+      "Countries in Europe","NBA teams","Car brands","Programming languages","Ice cream flavors",
+      "Video game characters","Musical instruments","Shapes","Fruits","Vegetables","Pokemon",
+      "U.S. states / Canadian provinces","Star Wars characters","Streaming shows","Coffee drinks",
+      "Chocolate brands","Cartoon characters","Mythical creatures","Sportswear brands","Fast food chains",
+      "Rappers","Pop stars","Bird species","Dinosaurs","Household chores","Things that are red",
+      "Mountains / hikes","Famous painters","Book genres","Breakfast foods","Types of pasta",
+      "Dog tricks","Hobbies","School subjects","Flowers","Sea creatures","Cookie types","Languages",
+      "Cities with a subway","Animals with stripes","Toys","Camping items","Card games","Weather words"
+    ];
+
+    const ruleSuggestionsPool = [
+      "No first names (use nicknames only)",
+      "No pointing (use elbows)",
+      "Speak in a movie quote once per turn",
+      "Tiny T-Rex arms while talking",
+      "British accent until your next draw",
+      "No using the word ‘drink’",
+      "Reverse the turn order",
+      "Clap before you speak",
+      "Thumb Master: last to put thumb on table drinks",
+      "No swearing",
+      "Rhyme every sentence end",
+      "Stand to speak",
+      "No looking at the card when you draw (someone else reads it)",
+      "Only whispering",
+      "Raise pinky when sipping",
+      "No touching hair",
+      "Questions must be answered with a question",
+      "Talk like a pirate",
+      "Ban a letter (e.g., no ‘S’ words)",
+      "Swap seats with someone of your choice"
+    ];
+
+    // Active state
+    let deck = [];
+    let drawn = [];
+    let kingsDrawn = 0;
+    let featuredCategories = [];
+    let featuredRules = [];
+
+    let players = [];
+    let currentIndex = 0;
+    let clockwise = true;
+
+    let deferredPrompt = null; // PWA install
+
+    // Helpers
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    function buildDeck(){ const d=[]; for(const s of SUITS){ for(const r of RANKS){ d.push({rank:r, suit:s}); } } return d; }
+    function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+    function pickN(pool,n){ return shuffle(pool).slice(0,n); }
+
+    function toast(msg){ const t=document.createElement('div'); t.className='fixed bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm shadow-xl'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),1400); }
+
+    function updateCounters(){ $('#deckCount').textContent=deck.length; $('#drawnCount').textContent=drawn.length; $('#kingsCount').textContent=`${kingsDrawn} / 4`; }
+
+    function showCardFront(card){ $('#frontRank').textContent=card.rank; $('#frontSuit').textContent=card.suit; $('#frontCornerTL').textContent=card.rank; $('#frontCornerBR').textContent=card.rank; $('#frontSuitTL').textContent=card.suit; $('#frontSuitBR').textContent=card.suit; }
+
+    function flipOnce(){ const w=$('#cardWrapper'); w.classList.remove('flip'); void w.offsetWidth; w.classList.add('flip'); }
+
+    function ruleIcon(rank){
+      const e = ruleEmoji[rank] || '🎲';
+      return `<span class="inline-grid place-items-center w-10 h-10 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/40 dark:to-fuchsia-900/40 text-xl">${e}</span>`;
+    }
+
+    function actionTextFor(card){
+      const gentle=$('#safeToggle').checked; const base=DEFAULT_RULES[card.rank]; if(!base) return '';
+      let desc=base.desc.replaceAll('drink', gentle?'sip/penalty':'drink').replaceAll('sips', gentle?'sips/penalties':'sips').replaceAll('sip', gentle?'sip/penalty':'sip');
+      if(card.rank==='K'){ const remaining=4-(kingsDrawn+1); desc += remaining>0 ? ` There will be ${remaining} King(s) left after this.` : ` This is the final King!`; }
+      const current = players.length?`<div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Current: <b>${players[currentIndex]||'—'}</b></div>`:'';
+      return `<div class="flex items-start gap-3">${ruleIcon(card.rank)}<div class="leading-relaxed">${desc}</div></div>${current}`;
+    }
+
+    function miniCardEl(card){
+      const el = document.createElement('div');
+      el.className = 'mini-card rounded-xl shadow bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 text-white grid pop-in';
+      el.innerHTML = `<div class="self-start text-left p-1 text-xs font-bold">${card.rank}</div><div class="place-self-center -mt-4 text-lg font-black">${card.rank}${card.suit}</div><div class="self-end text-right p-1 text-[10px] opacity-80">${card.suit}</div>`;
+      return el;
+    }
+
+    function pushHistory(card){
+      const box=$('#history');
+      const el = miniCardEl(card);
+      box.prepend(el);
+      while(box.children.length>24){ box.lastElementChild.remove(); }
+    }
+
+    function renderCategories(){ const box=$('#categories'); box.innerHTML=''; featuredCategories.forEach(c=>{ const chip=document.createElement('button'); chip.className='px-3 py-1.5 rounded-full bg-white/70 hover:bg-white text-indigo-950 dark:text-indigo-100'; chip.textContent=c; chip.addEventListener('click',()=>{ navigator.clipboard?.writeText(c); toast(`Copied “${c}”`); }); box.appendChild(chip); }); }
+    function renderRuleIdeas(){ const ul=$('#ruleIdeas'); ul.innerHTML=''; featuredRules.forEach(r=>{ const li=document.createElement('li'); li.innerHTML=`<span>${r}</span>`; ul.appendChild(li); }); }
+
+    function showPanel(el){ el.classList.remove('hiddenish'); }
+    function hidePanel(el){ el.classList.add('hiddenish'); }
+
+    // Players (persisted)
+    function savePlayers(){ localStorage.setItem('kc_players', JSON.stringify({players,currentIndex,clockwise})); }
+    function loadPlayers(){ try{ const d=JSON.parse(localStorage.getItem('kc_players')); if(d){ players=d.players||[]; currentIndex=d.currentIndex||0; clockwise=d.clockwise??true; } }catch{} renderPlayers(); }
+    function renderPlayers(){ const ul=$('#playersList'); ul.innerHTML=''; if(!players.length){ $('#currentPlayerBox').textContent='No players yet.'; return; } $('#currentPlayerBox').innerHTML=`Current: <b>${players[currentIndex]}</b> • Direction: <b>${clockwise?'↻':'↺'}</b>`; players.forEach((name,i)=>{ const li=document.createElement('li'); li.className='flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-800'; li.innerHTML=`<span class="w-6 text-center text-xs text-slate-500 dark:text-slate-400">${i+1}</span><span class="flex-1">${name}</span><div class="flex items-center gap-1"><button class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" data-up="${i}">▲</button><button class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700" data-down="${i}">▼</button><button class="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200" data-del="${i}">✕</button></div>`; ul.appendChild(li); }); $$('[data-up]').forEach(b=>b.addEventListener('click',e=>{ const i=+e.currentTarget.getAttribute('data-up'); if(i>0){ [players[i-1],players[i]]=[players[i],players[i-1]]; if(currentIndex===i) currentIndex=i-1; else if(currentIndex===i-1) currentIndex=i; savePlayers(); renderPlayers(); } })); $$('[data-down]').forEach(b=>b.addEventListener('click',e=>{ const i=+e.currentTarget.getAttribute('data-down'); if(i<players.length-1){ [players[i+1],players[i]]=[players[i],players[i+1]]; if(currentIndex===i) currentIndex=i+1; else if(currentIndex===i+1) currentIndex=i; savePlayers(); renderPlayers(); } })); $$('[data-del]').forEach(b=>b.addEventListener('click',e=>{ const i=+e.currentTarget.getAttribute('data-del'); players.splice(i,1); if(currentIndex>=players.length) currentIndex=Math.max(0,players.length-1); savePlayers(); renderPlayers(); })); }
+    function nextTurn(){ if(!players.length) return; currentIndex=(currentIndex+(clockwise?1:-1)+players.length)%players.length; savePlayers(); renderPlayers(); }
+    function prevTurn(){ if(!players.length) return; currentIndex=(currentIndex-(clockwise?1:-1)+players.length)%players.length; savePlayers(); renderPlayers(); }
+
+    // Theme & PWA
+    function setTheme(t){ const dark=t==='dark'; document.documentElement.classList.toggle('dark',dark); localStorage.setItem('kc_theme',dark?'dark':'light'); $('#themeToggle').textContent=dark?'☀️':'🌙'; }
+    function initTheme(){ const saved=localStorage.getItem('kc_theme'); if(saved){ setTheme(saved); } else { setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); } }
+    function registerSW(){ if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); } }
+    window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferredPrompt=e; $('#installBtn').classList.remove('hidden'); });
+
+    // Share (players + featured lists)
+    function base64urlEncode(str){ return btoa(unescape(encodeURIComponent(str))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_'); }
+    function base64urlDecode(str){ str=str.replace(/-/g,'+').replace(/_/g,'/'); const pad=str.length%4; if(pad) str+='='.repeat(4-pad); return decodeURIComponent(escape(atob(str))); }
+    function serializeState(){ return { players, currentIndex, clockwise, featuredCategories, featuredRules }; }
+    function applyState(s){ try{ if(Array.isArray(s.players)){ players=s.players.slice(0,20); currentIndex=Math.min(Math.max(0,s.currentIndex||0),Math.max(0,players.length-1)); clockwise=s.clockwise!==false; renderPlayers(); } if(Array.isArray(s.featuredCategories)&&s.featuredCategories.length){ featuredCategories=s.featuredCategories.slice(0,4); renderCategories(); } if(Array.isArray(s.featuredRules)&&s.featuredRules.length){ featuredRules=s.featuredRules.slice(0,8); renderRuleIdeas(); } toast('Loaded shared game'); }catch{} }
+    function shareUrl(){ const url=new URL(location.href); url.searchParams.set('s', base64urlEncode(JSON.stringify(serializeState()))); return url.toString(); }
+    async function doShare(){ const url=shareUrl(); try{ if(navigator.share){ await navigator.share({title:"Play King's Cup", url}); } else { await navigator.clipboard?.writeText(url); toast('Link copied'); } }catch{ await navigator.clipboard?.writeText(url); toast('Link copied'); } }
+    function loadFromUrl(){ const s=new URL(location.href).searchParams.get('s'); if(!s) return; try{ applyState(JSON.parse(base64urlDecode(s))); }catch{} }
+
+    // Game Flow (LOCAL)
+    function newGame(){ deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; featuredCategories=pickN(categoriesPool,4); featuredRules=pickN(ruleSuggestionsPool,8); $('#history').innerHTML=''; updateCounters(); renderCategories(); renderRuleIdeas(); $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin. Jack reveals <b>Categories</b>. King reveals <b>New Rule</b> ideas.</span>'; $('#card').style.transform='rotateY(0deg)'; $('#cardWrapper').classList.remove('flip'); hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+
+    function drawCard(){ if(deck.length===0){ toast('Deck is empty — reshuffle to continue'); return; } const card=deck.pop(); drawn.push(card); if(card.rank==='K'){ kingsDrawn++; } updateCounters(); showCardFront(card); const cur=players.length?` — <span class="text-slate-500 dark:text-slate-400">${players[currentIndex]}</span>`:''; $('#actionText').innerHTML=`<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${card.rank}${card.suit} – <b>${DEFAULT_RULES[card.rank]?.name||''}</b>${cur}</div>` + actionTextFor(card); pushHistory(card); flipOnce(); const w = document.getElementById('cardWrapper'); w.classList.add('card-swap'); w.addEventListener('animationend',()=>w.classList.remove('card-swap'),{once:true}); if(players.length){ toast(`${players[currentIndex]} drew ${card.rank}`); nextTurn(); }
+      // Dynamic panels
+      if(card.rank==='J'){ showPanel(document.getElementById('panelCategories')); renderCategories(); hidePanel(document.getElementById('panelRuleIdeas')); }
+      else if(card.rank==='K'){ showPanel(document.getElementById('panelRuleIdeas')); renderRuleIdeas(); hidePanel(document.getElementById('panelCategories')); }
+      else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+    }
+
+    function backOne(){
+      if(!drawn.length){ toast('Nothing to undo'); return; }
+      const last = drawn.pop();
+      if(last.rank==='K' && kingsDrawn>0) kingsDrawn--;
+      deck.push(last); // put it back on top
+      updateCounters();
+      const h = $('#history'); if(h.firstElementChild) h.removeChild(h.firstElementChild);
+      const prev = drawn[drawn.length-1];
+      if(prev){
+        showCardFront(prev);
+        $('#actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${prev.rank}${prev.suit} – <b>${DEFAULT_RULES[prev.rank]?.name||''}</b></div>` + actionTextFor(prev);
+        if(prev.rank==='J'){ showPanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+        else if(prev.rank==='K'){ showPanel($('#panelRuleIdeas')); hidePanel($('#panelCategories')); }
+        else { hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+      } else {
+        $('#frontRank').textContent='?'; $('#frontSuit').textContent='♠'; $('#frontCornerTL').textContent='★'; $('#frontCornerBR').textContent='★'; $('#frontSuitTL').textContent='♣'; $('#frontSuitBR').textContent='♣';
+        $('#actionText').innerHTML='<span class="text-slate-600 dark:text-slate-300">Tap the card to begin.</span>';
+        hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas'));
+      }
+      if(players.length) prevTurn();
+    }
+
+    // --- Realtime integration hooks ---
+    window.NETWORK_MODE = 'local';
+    window.realtime = { available:false, isHost:false, roomCode:null };
+
+    function applyRemoteState(data){
+      deck = data.state.deck || [];
+      drawn = data.state.drawn || [];
+      kingsDrawn = data.state.kingsDrawn || 0;
+      featuredCategories = data.state.featuredCategories || [];
+      featuredRules = data.state.featuredRules || [];
+      players = (data.players||[]).map(p=>p.name);
+      currentIndex = data.state.turnIndex || 0;
+      clockwise = data.state.clockwise !== false;
+      updateCounters();
+      const h = document.getElementById('history'); h.innerHTML='';
+      drawn.slice().reverse().forEach(c=> h.appendChild(miniCardEl(c)) );
+      if(drawn.length){
+        const last = drawn[drawn.length-1];
+        showCardFront(last);
+        document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last);
+        if (last.rank==='J'){ showPanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+        else if (last.rank==='K'){ showPanel(document.getElementById('panelRuleIdeas')); hidePanel(document.getElementById('panelCategories')); }
+        else { hidePanel(document.getElementById('panelCategories')); hidePanel(document.getElementById('panelRuleIdeas')); }
+      }
+      renderCategories(); renderRuleIdeas(); renderPlayers();
+    }
+    window.applyRemoteState = applyRemoteState;
+
+    function updateRoomBadge(){
+      const badge = document.getElementById('roomBadge');
+      const text = document.getElementById('roomCodeText');
+      if(window.NETWORK_MODE==='realtime' && window.realtime.roomCode){
+        text.textContent = window.realtime.roomCode;
+        badge.classList.remove('hidden');
+        document.getElementById('netMode').textContent = 'Realtime';
+      } else {
+        text.textContent = 'LOCAL';
+        badge.classList.add('hidden');
+        document.getElementById('netMode').textContent = 'Local';
+      }
+    }
+
+    function gameDraw(){
+      if(window.NETWORK_MODE==='realtime'){
+        if(window.realtime.isHost && window.realtime.hostDrawCard){ window.realtime.hostDrawCard(); }
+        else toast('Only host can draw');
+      } else {
+        drawCard();
+      }
+    }
+    function gameBack(){
+      if(window.NETWORK_MODE==='realtime'){
+        if(window.realtime.isHost && window.realtime.hostBackOne){ window.realtime.hostBackOne(); }
+        else toast('Only host can undo');
+      } else {
+        backOne();
+      }
+    }
+
+    // Events
+    document.getElementById('backBtn').addEventListener('click', gameBack);
+    document.getElementById('cardWrapper').addEventListener('click', gameDraw);
+    document.getElementById('cardWrapper').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); gameDraw(); }});
+    document.getElementById('reshuffleBtn').addEventListener('click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host reshuffles only') : reshuffle());
+    document.getElementById('resetBtn').addEventListener('click', ()=> window.NETWORK_MODE==='realtime' ? toast('Host resets only') : newGame());
+    document.getElementById('safeToggle').addEventListener('change', ()=>{ if(drawn.length){ const last=drawn[drawn.length-1]; document.getElementById('actionText').innerHTML = `<div class="mb-1 text-sm text-slate-500 dark:text-slate-400">${last.rank}${last.suit} – <b>${DEFAULT_RULES[last.rank]?.name||''}</b></div>` + actionTextFor(last); } });
+    document.getElementById('rerollCats').addEventListener('click', ()=>{ featuredCategories=pickN(categoriesPool,4); renderCategories(); toast('Fresh categories'); });
+    document.getElementById('rerollRules').addEventListener('click', ()=>{ featuredRules=pickN(ruleSuggestionsPool,8); renderRuleIdeas(); toast('New ideas'); });
+
+    // Header buttons
+    document.getElementById('playersBtn').addEventListener('click', ()=>{ document.getElementById('playersSheet').classList.remove('hidden'); });
+    document.getElementById('playersClose').addEventListener('click', ()=>{ document.getElementById('playersSheet').classList.add('hidden'); });
+    document.getElementById('dirToggle').addEventListener('click', ()=>{ clockwise=!clockwise; savePlayers(); renderPlayers(); });
+    document.getElementById('nextTurn').addEventListener('click', nextTurn);
+    document.getElementById('prevTurn').addEventListener('click', prevTurn);
+
+    document.getElementById('themeToggle').addEventListener('click', ()=>{ const dark=document.documentElement.classList.contains('dark'); setTheme(dark?'light':'dark'); });
+    document.getElementById('shareBtn').addEventListener('click', doShare);
+    document.getElementById('installBtn').addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; document.getElementById('installBtn').classList.add('hidden'); });
+
+    // Room UI
+    document.getElementById('roomBtn').addEventListener('click', ()=>{ document.getElementById('roomSheet').classList.remove('hidden'); });
+    document.getElementById('roomClose').addEventListener('click', ()=>{ document.getElementById('roomSheet').classList.add('hidden'); });
+    document.getElementById('createRoomBtn').addEventListener('click', ()=>{
+      if(!window.realtime.available){ toast('Realtime not configured'); return; }
+      const name = (document.getElementById('hostName').value||'Host').trim();
+      window.realtime.createRoom({name}).then(code=>{
+        toast('Room created');
+        window.NETWORK_MODE='realtime'; updateRoomBadge();
+        document.getElementById('activeRoomBox').classList.remove('hidden');
+      }).catch(e=> toast(e.message||'Failed to create'));
+    });
+    document.getElementById('joinRoomBtn').addEventListener('click', ()=>{
+      if(!window.realtime.available){ toast('Realtime not configured'); return; }
+      const name = (document.getElementById('joinName').value||'Player').trim();
+      const code = (document.getElementById('joinCode').value||'').trim();
+      window.realtime.joinRoom({code,name}).then(()=>{
+        toast('Joined room'); window.NETWORK_MODE='realtime'; updateRoomBadge();
+        document.getElementById('activeRoomBox').classList.remove('hidden');
+      }).catch(e=> toast(e.message||'Join failed'));
+    });
+    document.getElementById('copyRoomLink').addEventListener('click', ()=>{
+      if(!window.realtime.roomCode){ toast('No room'); return; }
+      const url = new URL(location.href); url.searchParams.set('room', window.realtime.roomCode);
+      navigator.clipboard?.writeText(url.toString()); toast('Link copied');
+    });
+    document.getElementById('leaveRoomBtn').addEventListener('click', ()=>{
+      window.NETWORK_MODE='local'; window.realtime.roomCode=null; window.realtime.isHost=false; updateRoomBadge(); toast('Left room — Local mode');
+    });
+
+    // Init
+    function init(){ initTheme(); registerSW(); loadPlayers(); applyCardImages(); newGame(); loadFromUrl(); updateRoomBadge(); }
+    init();
+  </script>
+
+  <!-- Realtime (Firebase) — OPTIONAL. Provide config via window.FIREBASE_CONFIG before this script. -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+    const cfg = window.FIREBASE_CONFIG; // set this in a <script> before including this file OR inline here
+    if(!cfg){ window.realtime.available=false; console.info('[KC] Realtime disabled (no FIREBASE_CONFIG)'); return; }
+
+    const app = initializeApp(cfg);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+    await signInAnonymously(auth).catch(()=>{});
+
+    let ROOM_ID = null;
+
+    function randCode(len=5){ return Array.from(crypto.getRandomValues(new Uint8Array(len))).map(n => "ABCDEFGHJKLMNPQRSTUVWXYZ"[n%25]).join(""); }
+
+    async function createRoom({name}){
+      const code = randCode(5);
+      ROOM_ID = code;
+      const ref = doc(db, 'rooms', ROOM_ID);
+      await setDoc(ref, {
+        createdAt: Date.now(),
+        hostUid: auth.currentUser?.uid || 'host',
+        code,
+        players: [{ uid: auth.currentUser?.uid || 'host', name, lastSeen: Date.now() }],
+        state: {
+          deck: window.shuffle(window.buildDeck ? window.buildDeck() : (function(){ const d=[]; for(const s of ["♠","♥","♦","♣"]) for(const r of ["A","2","3","4","5","6","7","8","9","10","J","Q","K"]) d.push({rank:r,suit:s}); return d; })()),
+          drawn: [], kingsDrawn: 0,
+          featuredCategories: window.pickN ? window.pickN(window.categoriesPool,4) : [],
+          featuredRules: window.pickN ? window.pickN(window.ruleSuggestionsPool,8) : [],
+          panels: { showCats:false, showRules:false },
+          safe: true, turnIndex: 0, clockwise: true
+        }
+      });
+      window.realtime.isHost = true; window.realtime.roomCode = code; window.realtime.available = true;
+      subscribe();
+      document.getElementById('activeRoomCode').textContent = code;
+      document.getElementById('activeRoomHost').textContent = name;
+      document.getElementById('roomPlayers').textContent = name;
+      document.getElementById('roomBadge').classList.remove('hidden');
+      document.getElementById('roomCodeText').textContent = code;
+      return code;
+    }
+
+    async function joinRoom({code, name}){
+      ROOM_ID = code.toUpperCase();
+      const ref = doc(db, 'rooms', ROOM_ID);
+      const snap = await getDoc(ref);
+      if(!snap.exists()) throw new Error('Room not found');
+      const data = snap.data();
+      const players = (data.players||[]).filter(p=>p.uid!==auth.currentUser?.uid);
+      players.push({ uid: auth.currentUser?.uid || Math.random().toString(36).slice(2), name, lastSeen: Date.now() });
+      await updateDoc(ref, { players });
+      window.realtime.isHost = (data.hostUid === (auth.currentUser?.uid));
+      window.realtime.roomCode = ROOM_ID; window.realtime.available = true;
+      subscribe();
+      document.getElementById('activeRoomCode').textContent = ROOM_ID;
+      document.getElementById('activeRoomHost').textContent = data.players?.[0]?.name || 'Host';
+      document.getElementById('roomPlayers').textContent = players.map(p=>p.name).join(', ');
+      document.getElementById('roomBadge').classList.remove('hidden');
+      document.getElementById('roomCodeText').textContent = ROOM_ID;
+    }
+
+    function subscribe(){
+      const ref = doc(db, 'rooms', ROOM_ID);
+      onSnapshot(ref, (snap)=>{
+        if(!snap.exists()) return;
+        const data = snap.data();
+        window.applyRemoteState(data);
+        document.getElementById('roomPlayers').textContent = (data.players||[]).map(p=>p.name).join(', ');
+      });
+    }
+
+    async function hostDrawCard(){
+      const ref = doc(db, 'rooms', ROOM_ID);
+      await runTransaction(db, async (tx)=>{
+        const snap = await tx.get(ref); const data = snap.data();
+        const d = (data.state.deck||[]).slice(); if(!d.length) return;
+        const card = d.pop();
+        const drawnNew = (data.state.drawn||[]).concat([card]);
+        const kings = (data.state.kingsDrawn||0) + (card.rank==='K'?1:0);
+        tx.update(ref, {
+          "state.deck": d,
+          "state.drawn": drawnNew,
+          "state.kingsDrawn": kings,
+          "state.panels": { showCats: card.rank==='J', showRules: card.rank==='K' },
+          "state.turnIndex": ( (data.state.turnIndex||0) + ((data.state.clockwise!==false)?1:-1) + (data.players||[]).length ) % Math.max(1,(data.players||[]).length)
+        });
+      });
+    }
+    async function hostBackOne(){
+      const ref = doc(db, 'rooms', ROOM_ID);
+      await runTransaction(db, async (tx)=>{
+        const snap = await tx.get(ref); const data = snap.data();
+        const drawnNew = (data.state.drawn||[]).slice(); if(!drawnNew.length) return;
+        const last = drawnNew.pop();
+        const deckNew = (data.state.deck||[]).concat([last]);
+        tx.update(ref, {
+          "state.deck": deckNew,
+          "state.drawn": drawnNew,
+          "state.kingsDrawn": Math.max(0, (data.state.kingsDrawn||0) - (last.rank==='K'?1:0)),
+          "state.panels": { showCats:false, showRules:false },
+          "state.turnIndex": ( (data.state.turnIndex||0) - ((data.state.clockwise!==false)?1:-1) + (data.players||[]).length ) % Math.max(1,(data.players||[]).length)
+        });
+      });
+    }
+
+    window.realtime.available = true;
+    window.realtime.createRoom = createRoom;
+    window.realtime.joinRoom = joinRoom;
+    window.realtime.hostDrawCard = hostDrawCard;
+    window.realtime.hostBackOne = hostBackOne;
+
+    // Auto-join if ?room=
+    const roomCode = (new URL(location.href)).searchParams.get('room');
+    if(roomCode){
+      const name = localStorage.getItem('kc_name') || 'Player';
+      try { await joinRoom({code: roomCode, name}); window.NETWORK_MODE='realtime'; if(document.getElementById('roomSheet')) document.getElementById('roomSheet').classList.add('hidden'); } catch(e){ console.warn(e); }
+    }
+  </script>
+</body>
+</html>
