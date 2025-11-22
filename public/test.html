@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>King's Cup — Party Web App</title>
-  <meta name="description" content="Mobile-friendly King's Cup web app. Tap the card to draw." />
   <meta name="theme-color" content="#6366f1" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,10 +12,10 @@
   <script>tailwind.config = { darkMode: 'class' }</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root{ --brand:#6366f1; --brand-accent:#ec4899; --front-img:none; --back-img:none; }
+    :root{ --brand:#6366f1; }
     html,body{ font-family: 'Plus Jakarta Sans', system-ui, sans-serif; height: 100%; overscroll-behavior: none; }
     
-    /* Animated Background Gradient */
+    /* Background */
     .bg-mesh {
       background: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
                   radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
@@ -25,16 +24,44 @@
       background-attachment: fixed;
     }
 
-    .card-3d{ perspective: 1200px; }
-    .card-face{ transform-style: preserve-3d; transition: transform .6s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
-    .flip .card-face{ transform: rotateY(180deg); }
-    .face-front, .face-back{ backface-visibility: hidden; position: relative; }
-    .face-back{ transform: rotateY(180deg); }
+    /* --- FIXED 3D CARD CSS --- */
+    .card-3d { perspective: 1200px; }
     
-    .face-front::before, .face-back::before{ content:""; position:absolute; inset:0; background-repeat:no-repeat; background-position:center; background-size:contain; pointer-events:none; z-index:0; }
-    .face-front::before{ background-image: var(--front-img); }
-    .face-back::before{ background-image: var(--back-img); }
-    .face-front > *, .face-back > * { position: relative; z-index: 1; }
+    /* The container that rotates */
+    .card-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform-style: preserve-3d;
+    }
+
+    /* State: Flipped (Showing Front) */
+    .card-wrapper.flipped {
+      transform: rotateY(180deg);
+    }
+
+    /* Faces */
+    .face-front, .face-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 1rem;
+      backface-visibility: hidden; /* Hide back of this specific face */
+      -webkit-backface-visibility: hidden;
+    }
+
+    /* Front (Number): Starts rotated 180deg (facing away) */
+    .face-front {
+      transform: rotateY(180deg);
+      z-index: 2;
+    }
+
+    /* Back (Purple Logo): Starts at 0deg (facing user) */
+    .face-back {
+      transform: rotateY(0deg);
+      z-index: 1;
+    }
+    /* -------------------------- */
 
     /* Utility Animations */
     .icon-btn{ display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:9999px; transition: all 0.2s ease; }
@@ -43,15 +70,10 @@
     .panel{ transition: all .3s cubic-bezier(0.4, 0, 0.2, 1); overflow:hidden; }
     .panel.hiddenish{ opacity:0; max-height:0; margin-top: 0 !important; padding: 0 !important; pointer-events:none; }
     
-    @keyframes card-swap{ 0%{ transform: translateY(0) scale(1); } 50%{ transform: translateY(-10px) scale(1.05) rotate(2deg);} 100%{ transform: translateY(0) scale(1);} }
-    .card-swap{ animation: card-swap 350ms ease; }
     @keyframes pop{ 0%{ transform: scale(.85); opacity:0; } 100%{ transform: scale(1); opacity:1; } }
     .pop-in{ animation: pop 200ms cubic-bezier(0.175, 0.885, 0.32, 1.275); }
   </style>
-  <script>window.KC_PRO = !!localStorage.getItem('kc_party_pass');
-  window.STRIPE_LINK_PARTY_PASS = window.STRIPE_LINK_PARTY_PASS || ""; 
-  window.STRIPE_LINK_LIFETIME  = window.STRIPE_LINK_LIFETIME  || "";
-  </script>
+  <script>window.KC_PRO = !!localStorage.getItem('kc_party_pass');</script>
 </head>
 <body class="bg-[#F2F2F7] text-slate-900 dark:bg-[#020617] dark:text-slate-100 bg-mesh transition-colors duration-300">
   
@@ -79,17 +101,18 @@
       
       <div class="relative w-full bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-white/50 dark:border-white/10 p-1 overflow-visible">
         
-        <div class="absolute top-5 left-0 right-0 flex justify-between px-6 text-[10px] uppercase tracking-widest font-bold text-slate-400 dark:text-slate-500 z-10">
+        <div class="absolute top-5 left-0 right-0 flex justify-between px-6 text-[10px] uppercase tracking-widest font-bold text-slate-400 dark:text-slate-500 z-10 pointer-events-none">
           <span>Deck: <b id="deckCount" class="text-slate-700 dark:text-slate-300">52</b></span>
           <span>Kings: <b id="kingsCount" class="text-slate-700 dark:text-slate-300">0/4</b></span>
         </div>
 
         <div class="pt-12 pb-6 flex justify-center card-3d">
-          <div id="cardWrapper" role="button" tabindex="0" aria-label="Draw card" class="relative w-[220px] h-[308px] md:w-[240px] md:h-[336px] cursor-pointer select-none group">
+          <div id="cardContainer" class="relative w-[220px] h-[308px] md:w-[240px] md:h-[336px] cursor-pointer select-none group">
              <div class="absolute -inset-2 rounded-[20px] bg-gradient-to-b from-indigo-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity blur-md"></div>
 
-            <div id="card" class="card-face absolute inset-0 rounded-2xl shadow-2xl dark:shadow-black/50">
-              <div class="face-front absolute inset-0 rounded-2xl bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-700 flex flex-col p-4 text-slate-900 dark:text-white overflow-hidden">
+            <div id="cardWrapper" class="card-wrapper shadow-2xl dark:shadow-black/50 rounded-2xl">
+              
+              <div class="face-front bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-700 flex flex-col p-4 text-slate-900 dark:text-white overflow-hidden">
                  <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 z-0"></div>
                  <div id="bgSuit" class="absolute -bottom-8 -right-8 text-[10rem] opacity-5 z-0 pointer-events-none">♠︎</div>
 
@@ -109,7 +132,7 @@
                 </div>
               </div>
 
-              <div class="face-back absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center border-4 border-white dark:border-slate-700 shadow-inner">
+              <div class="face-back bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center border-4 border-white dark:border-slate-700 shadow-inner">
                 <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 16px 16px;"></div>
                 <div class="text-center relative z-10">
                   <div class="w-16 h-16 mx-auto bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-2xl mb-2 shadow-lg">👑</div>
@@ -117,6 +140,7 @@
                   <div class="text-white text-3xl font-black tracking-tight">KING'S<br>CUP</div>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
@@ -124,7 +148,7 @@
         <div class="px-4 pb-6">
            <div id="ruleContainer" class="relative min-h-[6rem] bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center text-center transition-all">
               <div id="actionText" class="w-full">
-                <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Tap the card to start the game.</span>
+                <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Tap the card to start.</span>
               </div>
            </div>
         </div>
@@ -209,7 +233,6 @@
         <h2 class="font-bold text-xl">Manage Players</h2>
         <button id="playersClose" class="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-full">✕</button>
       </div>
-      
       <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl mb-4 border border-slate-200 dark:border-slate-700">
          <div class="text-xs font-bold uppercase text-slate-400">Turn Order</div>
          <div class="flex gap-2">
@@ -218,12 +241,10 @@
             <button id="nextTurn" class="w-8 h-8 rounded bg-white dark:bg-slate-700 shadow text-sm">▶</button>
          </div>
       </div>
-
       <form id="playerForm" class="flex gap-2 mb-4">
         <input id="playerName" class="flex-1 px-4 py-3 rounded-xl border-none bg-slate-100 dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="New player name" />
         <button class="px-4 rounded-xl bg-indigo-600 text-white font-bold">Add</button>
       </form>
-      
       <div id="currentPlayerBox" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-2"></div>
       <ul id="playersList" class="space-y-2"></ul>
     </div>
@@ -248,7 +269,6 @@
       const btn = document.getElementById('roomBtn');
       btn.classList.remove('cursor-not-allowed','opacity-60','text-slate-400');
       btn.classList.add('text-indigo-600','dark:text-indigo-400');
-      // Clone to remove old listeners
       const newBtn = btn.cloneNode(true);
       btn.parentNode.replaceChild(newBtn, btn);
       newBtn.addEventListener('click', ()=> document.getElementById('roomSheet').classList.remove('hidden'));
@@ -276,7 +296,6 @@
       Q: { name: "Questions", desc: "Answer questions with questions." },
       K: { name: "King’s Cup", desc: "Pour into cup. 4th King drinks it." },
     };
-    
     const ruleEmoji = { A:'🤞', 2:'👉', 3:'🙋', 4:'🧎', 5:'🧔', 6:'👩', 7:'☝️', 8:'🤝', 9:'🎤', 10:'🌊', J:'🧠', Q:'❓', K:'👑' };
     
     // State
@@ -284,7 +303,6 @@
     
     // DOM Helpers
     const $ = s => document.querySelector(s);
-    const $$ = s => document.querySelectorAll(s);
     
     function buildDeck(){ const d=[]; for(const s of SUITS) for(const r of RANKS) d.push({rank:r, suit:s}); return d; }
     function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -292,13 +310,14 @@
     function updateCounters(){ $('#deckCount').textContent=deck.length; $('#kingsCount').textContent=`${kingsDrawn}/4`; }
     
     function showCardFront(c){
-       // Colors based on suit
        const red = (c.suit === '♥' || c.suit === '♦');
        const colorClass = red ? 'text-rose-500' : 'text-slate-900 dark:text-slate-100';
        
+       // Reset front face classes and add dynamic color
        const front = $('.face-front');
-       front.className = `face-front absolute inset-0 rounded-2xl bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-700 flex flex-col p-4 overflow-hidden ${colorClass}`;
+       front.className = `face-front bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-700 flex flex-col p-4 overflow-hidden ${colorClass}`;
        
+       // Update text content
        $('#frontRank').textContent=c.rank; $('#frontSuit').textContent=c.suit;
        $('#frontCornerTL').textContent=c.rank; $('#frontSuitTL').textContent=c.suit;
        $('#frontCornerBR').textContent=c.rank; $('#frontSuitBR').textContent=c.suit;
@@ -314,9 +333,8 @@
       if(card.rank==='K'){ const left=4-(kingsDrawn+1); desc += left>0 ? ` (${left} left)` : ` Final King!`; }
       
       const pName = players.length ? players[currentIndex] : null;
-      const playerHtml = pName ? `<div class="text-xs font-bold text-indigo-500 uppercase tracking-wide mt-1">Current Turn: ${pName}</div>` : '';
+      const playerHtml = pName ? `<div class="text-xs font-bold text-indigo-500 uppercase tracking-wide mt-1">Turn: ${pName}</div>` : '';
 
-      // Integrated Rule Display HTML
       return `
         <div class="flex flex-col items-center animate-slide-up">
            <div class="text-3xl mb-1">${ruleEmoji[card.rank]||'🎲'}</div>
@@ -339,7 +357,10 @@
       deck=shuffle(buildDeck()); drawn=[]; kingsDrawn=0; 
       updateCounters(); $('#history').innerHTML=''; 
       $('#actionText').innerHTML='<span class="text-slate-400 text-sm">Tap card to begin</span>';
-      $('#cardWrapper').classList.remove('flip');
+      
+      // Ensure card is face down (remove .flipped)
+      $('#cardWrapper').classList.remove('flipped');
+      
       hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas'));
     }
 
@@ -350,34 +371,33 @@
        if(card.rank==='K') kingsDrawn++;
        
        updateCounters();
+       
+       // 1. Update the DOM for the card Front
        showCardFront(card);
        
-       // Update Rule Area immediately
+       // 2. Handle Animation
+       const w = $('#cardWrapper');
+       // If already showing front (consecutive draws), briefly reset to simulate picking new card
+       if(w.classList.contains('flipped')){
+          w.classList.remove('flipped');
+          void w.offsetWidth; // force reflow
+          w.classList.add('flipped');
+       } else {
+          // First draw: just flip it
+          w.classList.add('flipped');
+       }
+       
        $('#actionText').innerHTML = actionTextFor(card);
        
-       // History
        const h = $('#history');
        h.insertBefore(miniCard(card), h.firstChild);
        if(h.children.length > 15) h.lastChild.remove();
 
-       // Flip Animation
-       const w = $('#cardWrapper');
-       w.classList.remove('flip'); 
-       void w.offsetWidth; // trigger reflow
-       w.classList.add('flip', 'card-swap');
-       setTimeout(()=> w.classList.remove('card-swap'), 350);
-
-       // Logic
        if(players.length) nextTurn();
        
-       // Panels
-       if(card.rank==='J'){ 
-         renderCats(); showPanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); 
-       } else if(card.rank==='K'){ 
-         renderRules(); showPanel($('#panelRuleIdeas')); hidePanel($('#panelCategories')); 
-       } else { 
-         hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); 
-       }
+       if(card.rank==='J'){ renderCats(); showPanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+       else if(card.rank==='K'){ renderRules(); showPanel($('#panelRuleIdeas')); hidePanel($('#panelCategories')); }
+       else { hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
     }
 
     function backOne(){
@@ -395,8 +415,11 @@
           if(prev.rank==='J') showPanel($('#panelCategories'));
           else if(prev.rank==='K') showPanel($('#panelRuleIdeas'));
           else { hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas')); }
+          // Ensure we are showing front
+          $('#cardWrapper').classList.add('flipped');
        } else {
-          $('#cardWrapper').classList.remove('flip');
+          // No cards drawn -> Flip back to Logo
+          $('#cardWrapper').classList.remove('flipped');
           $('#actionText').innerHTML = 'Tap to start';
           hidePanel($('#panelCategories')); hidePanel($('#panelRuleIdeas'));
        }
@@ -406,7 +429,6 @@
     // --- Categories & Rules ---
     const catPool = ["Brands","Pizza","Bands","Movies","Countries","Animals","Pokemon","Vegetables"];
     const rulePool = ["No pointing","No names","Tiny man","Foreign accent","Rhyme time"];
-    
     function renderCats(){
        const box=$('#categories'); box.innerHTML='';
        shuffle(catPool).slice(0,4).forEach(t=>{
@@ -426,7 +448,6 @@
     // --- Players ---
     function savePlayers(){ localStorage.setItem('kc_players', JSON.stringify({players,currentIndex,clockwise})); }
     function loadPlayers(){ try{ const d=JSON.parse(localStorage.getItem('kc_players')); if(d){ players=d.players||[]; currentIndex=d.currentIndex||0; clockwise=d.clockwise??true; renderPlayers(); }}catch{} }
-    
     function renderPlayers(){
        const ul=$('#playersList'); ul.innerHTML='';
        if(!players.length) return $('#currentPlayerBox').textContent='No players.';
@@ -439,17 +460,15 @@
        });
     }
     window.delPlayer = (i) => { players.splice(i,1); if(currentIndex>=players.length) currentIndex=0; savePlayers(); renderPlayers(); };
-    
     $('#playerForm').onsubmit = (e) => {
        e.preventDefault(); const n=$('#playerName').value.trim();
        if(n){ players.push(n); $('#playerName').value=''; savePlayers(); renderPlayers(); }
     };
-    
     function nextTurn(){ if(!players.length) return; currentIndex=(currentIndex+(clockwise?1:-1)+players.length)%players.length; savePlayers(); renderPlayers(); }
     function prevTurn(){ if(!players.length) return; currentIndex=(currentIndex-(clockwise?1:-1)+players.length)%players.length; savePlayers(); renderPlayers(); }
 
     // --- UI Bindings ---
-    $('#cardWrapper').onclick = drawCard;
+    $('#cardContainer').onclick = drawCard; // Bind to container
     $('#backBtn').onclick = backOne;
     $('#reshuffleBtn').onclick = newGame;
     $('#resetBtn').onclick = newGame;
@@ -465,16 +484,13 @@
     const toggleSheet = (id, show) => document.getElementById(id).classList.toggle('hidden', !show);
     $('#playersBtn').onclick = ()=> toggleSheet('playersSheet', true);
     $('#playersClose').onclick = ()=> toggleSheet('playersSheet', false);
-    
     $('#roomBtn').onclick = ()=> { if(window.KC_PRO) toggleSheet('roomSheet',true); else showProSheet(); };
     $('#roomClose').onclick = ()=> toggleSheet('roomSheet', false);
     
     const showProSheet = ()=> toggleSheet('proSheet', true);
     const hideProSheet = ()=> toggleSheet('proSheet', false);
     $('#proClose').onclick = hideProSheet;
-    $('#buyPassBtn').onclick = ()=> window.open(window.STRIPE_LINK_PARTY_PASS, '_blank');
-    $('#redeemBtn').onclick = ()=> { if($('#redeemCode').value) unlockPro('code'); };
-
+    
     // Init
     loadPlayers(); newGame(); checkUnlockFromURL();
   </script>
