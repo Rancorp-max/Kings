@@ -31,7 +31,18 @@ async function load() {
       <div class="kpi"><b>${t.conversionFreeToPaid}%</b><span>Free → paid</span></div>
       <div class="kpi"><b>${money(t.aiCostUsd)}</b><span>Anthropic cost · ${money(t.aiCostPerEventUsd)}/event using AI · ${money(t.aiCostPerPaidEventUsd)}/paid event</span></div>
     </div>
-    <h2>Kill / double-down rules</h2>${rule(d.rules.day7, 'Day 7')}${rule(d.rules.day30, 'Day 30')}
+    <h2>Kill / double-down rules</h2>${rule(d.rules.day7, 'Day 7')}${rule(d.rules.day30, 'Day 30')}${d.rules.day30Weddings ? rule(d.rules.day30Weddings, 'Day 30 (weddings)') : ''}
+    <h2>💍 Weddings</h2>
+    <div class="kpis">
+      <div class="kpi"><b>${d.weddings.created}</b><span>Weddings created</span></div>
+      <div class="kpi"><b>${d.weddings.paid}</b><span>Paid weddings</span></div>
+      <div class="kpi"><b>${money(d.weddings.revenueUsd)}</b><span>Wedding revenue</span></div>
+      <div class="kpi"><b>${d.weddings.licencesActive}</b><span>Active DJ/MC licences · ${money(d.weddings.djRevenueUsd)}</span></div>
+    </div>
+    <div class="grid2">${table('Wedding revenue by plan', d.weddings.revenueByPlanUsd, money, ['Plan', 'USD'])}${table('Wedding revenue by source', d.weddings.revenueBySourceUsd, money, ['Source', 'USD'])}</div>
+    <div class="panel" style="margin-top:14px"><h3>Per wedding</h3><table><tr><th>Wedding</th><th>Plan</th><th>Source</th><th class="num">Events run</th><th class="num">Guests</th><th class="num">Peak players</th><th class="num">Keepsake downloads</th><th>Purchase started from</th><th class="num">AI $</th></tr>
+    ${d.weddings.list.map((w) => `<tr><td>${esc(w.title)}</td><td>${esc(w.plan)}${w.paid ? ' ✓' : ''}</td><td>${esc(w.source)}</td><td class="num">${w.eventsRun}</td><td class="num">${w.guestsJoined}</td><td class="num">${w.peakConcurrent}</td><td class="num">${w.keepsakeDownloads}</td><td>${esc(w.purchaseFromEvent || '—')}</td><td class="num">${money(w.aiCostUsd)}</td></tr>`).join('') || '<tr><td colspan="9">No weddings yet</td></tr>'}</table></div>
+    <h2>🎉 Showers &amp; birthdays</h2>
     <div class="grid2">
       ${table('Revenue by source', d.revenueBySourceUsd, money, ['Source', 'USD'])}
       ${table('Revenue by theme', d.revenueByThemeUsd, money, ['Theme', 'USD'])}

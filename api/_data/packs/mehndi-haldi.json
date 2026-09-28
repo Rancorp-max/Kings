@@ -1,0 +1,134 @@
+{
+ "id": "mehndi-haldi",
+ "name": "Mehndi & Haldi",
+ "emoji": "🌿",
+ "description": "Couple trivia, \"how we met\", predictions and advice for the couple — gentle games for an afternoon of henna and haldi.",
+ "rounds": [
+  "Couple trivia (multiple choice)",
+  "How we met",
+  "Predictions for the couple",
+  "Advice for the couple (goes in the keepsake)"
+ ],
+ "defaults": [
+  {
+   "kind": "prompt",
+   "noteKind": "advice",
+   "text": "Share one piece of advice for {couple}'s married life."
+  },
+  {
+   "kind": "prompt",
+   "noteKind": "prediction",
+   "text": "Make a prediction: where will {a} and {b} be in five years?"
+  }
+ ],
+ "bank": [
+  {
+   "kind": "mc",
+   "text": "Where did {a} and {b} first meet?",
+   "options": [
+    "At work",
+    "Through friends or family",
+    "At university",
+    "Online"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "Who made the first move?",
+   "options": [
+    "{a}",
+    "{b}",
+    "A matchmaking relative",
+    "Still disputed!"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "What was their first date?",
+   "options": [
+    "Dinner",
+    "Coffee",
+    "A movie",
+    "A long walk"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "How long did they know each other before getting engaged?",
+   "options": [
+    "Under a year",
+    "1–2 years",
+    "3–5 years",
+    "6+ years"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "What is {a}'s favourite sweet?",
+   "options": [
+    "Gulab jamun",
+    "Jalebi",
+    "Rasmalai",
+    "Chocolate cake"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "What is {b}'s go-to comfort food?",
+   "options": [
+    "Biryani",
+    "Dal chawal",
+    "Pizza",
+    "Noodles"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "Where is the dream honeymoon?",
+   "options": [
+    "Beach",
+    "Mountains",
+    "A big city",
+    "Road trip"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "Which song would they pick for a first dance?",
+   "options": [
+    "A classic ballad",
+    "A Bollywood favourite",
+    "A pop hit",
+    "Something unexpected"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "who",
+   "text": "Who is more likely to be late to their own wedding?",
+   "correct": null
+  },
+  {
+   "kind": "who",
+   "text": "Who fell in love first?",
+   "correct": null
+  },
+  {
+   "kind": "who",
+   "text": "Who is the better cook?",
+   "correct": null
+  },
+  {
+   "kind": "who",
+   "text": "Who plans the holidays?",
+   "correct": null
+  }
+ ]
+}

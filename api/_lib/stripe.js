@@ -66,6 +66,9 @@ function verifyWebhook(rawBody, signature, secret = process.env.STRIPE_WEBHOOK_S
 /* Applies a verified Stripe event. Idempotent: purchases are keyed by the
  * Checkout Session id, so retries and duplicate deliveries are no-ops. */
 async function handleStripeEvent(event, db = getDb()) {
+  // Wedding passes and DJ licences are routed to billing.js; party passes continue below.
+  const billing = await require('./billing').handleBillingEvent(event, db);
+  if (billing) return billing;
   if (event.type !== 'checkout.session.completed' && event.type !== 'checkout.session.async_payment_succeeded') {
     return { handled: false, reason: 'ignored_type' };
   }

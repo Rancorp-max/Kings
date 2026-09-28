@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Host panel — PartyDeck Weddings</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/icons/favicon-48.png" sizes="48x48" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" /><link rel="stylesheet" href="/wedding.css" />
+</head>
+<body class="wed">
+  <main class="wed-wrap">
+    <div class="row" style="justify-content:space-between"><a href="#" id="backDash" class="small">← Dashboard</a><span class="pill" id="planPill"></span></div>
+    <h1 id="title">Host panel</h1>
+    <div class="tabs" id="evTabs"></div>
+    <div class="tabs" id="modeTabs"><button data-mode="run" class="sel">▶ Run</button><button data-mode="prep">🛠 Prepare</button><button data-mode="mod">💌 Moderate <span class="pill" id="pendCount">0</span></button></div>
+
+    <section id="tabRun">
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><b id="liveStage">—</b><a class="btn btn-ghost btn-sm" id="screenLink" target="_blank" rel="noopener">🖥 Open big screen</a></div>
+        <div class="stage" id="liveView"></div>
+        <div class="timerbar"><i id="tb"></i></div>
+        <div class="stat3"><div><b id="sAnswered">0</b>answered</div><div><b id="sActive">0</b>active now</div><div><b id="sGuests">0</b>guests</div></div>
+      </div>
+      <div class="card"><div class="ctl" id="controls"></div>
+        <label class="switch" style="margin-top:10px"><input type="checkbox" id="autoReveal" checked /><span class="slider"></span><span>Reveal automatically when time is up</span></label></div>
+      <div class="card"><h2>Rounds</h2><div class="items" id="runItems"></div></div>
+    </section>
+
+    <section id="tabPrep" class="hidden">
+      <div class="card"><h2>Event</h2>
+        <div class="grid2">
+          <div><label class="f">Name</label><input class="input" id="evName" maxlength="40" /></div>
+          <div><label class="f">Date &amp; time</label><div class="row"><input class="input" type="date" id="evDate" /><input class="input" type="time" id="evTime" /></div></div>
+          <div><label class="f">Language</label><select class="input" id="evLang"></select></div>
+          <div><label class="f">Show a second language</label><select class="input" id="evLang2"></select></div>
+        </div>
+        <p class="small muted" id="langNote"></p>
+        <button class="btn btn-ghost btn-sm" id="evSave">Save event</button>
+      </div>
+      <div class="card"><h2>✨ Personalise with AI</h2>
+        <p class="small muted">Add facts about the couple (one per line, up to 12). We'll draft rounds for this event's pack. <b>Nothing goes live until you approve it.</b></p>
+        <textarea class="input" id="facts" rows="5" placeholder="They met at a friend's wedding in Jaipur&#10;Asha has a secret talent for mimicry"></textarea>
+        <button class="btn btn-pink btn-block" id="genBtn">✨ Draft rounds</button><p class="err" id="genErr"></p>
+        <div id="drafts"></div>
+      </div>
+      <div class="card"><h2>Rounds in this event <span class="pill" id="itemCount">0</span></h2>
+        <div class="items" id="prepItems"></div>
+        <div class="row"><select class="input" id="newKind"><option value="mc">Multiple choice</option><option value="who">Who said it / who is more likely</option><option value="shoe">Shoe game</option><option value="emoji">Guess the song (emoji)</option><option value="vote">Vote (dance-off etc.)</option><option value="prompt">Wishes / toasts prompt</option></select><button class="btn btn-ghost btn-sm" id="addRound">➕ Add round</button></div>
+        <div id="editor"></div>
+        <details style="margin-top:10px"><summary>📚 Classic questions for this pack</summary><div class="items" id="bank"></div></details>
+        <div class="row" style="margin-top:10px"><button class="btn btn-gold" id="saveRounds">💾 Save rounds</button><button class="btn btn-ghost" id="translateBtn">🌐 Translate rounds</button></div>
+        <p class="err" id="prepErr"></p>
+      </div>
+    </section>
+
+    <section id="tabMod" class="hidden">
+      <div class="card"><h2>Waiting for review</h2><p class="small muted">Guest notes that our automatic check wasn't sure about. Approved notes can appear on the big screen and in the keepsake book.</p><div id="pending"></div></div>
+      <div class="card"><h2>Recently approved</h2><div id="approved"></div></div>
+    </section>
+  </main>
+  <div id="toasts"></div>
+  <script type="module" src="/js/wedding/host.js"></script>
+</body>
+</html>

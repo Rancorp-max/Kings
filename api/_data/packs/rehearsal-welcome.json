@@ -1,0 +1,106 @@
+{
+ "id": "rehearsal-welcome",
+ "name": "Rehearsal & Welcome",
+ "emoji": "🍽️",
+ "description": "\"How well do you know the couple\" and \"who said it: bride or groom?\" — perfect icebreakers for the first night.",
+ "rounds": [
+  "How well do you know the couple",
+  "Who said it: bride or groom?",
+  "Wishes for the couple"
+ ],
+ "defaults": [
+  {
+   "kind": "prompt",
+   "noteKind": "wish",
+   "text": "Leave a wish for {couple}."
+  }
+ ],
+ "bank": [
+  {
+   "kind": "mc",
+   "text": "Where did {a} and {b} meet?",
+   "options": [
+    "At work",
+    "Through friends",
+    "At school",
+    "Online"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "Who said \"I love you\" first?",
+   "options": [
+    "{a}",
+    "{b}",
+    "Both at once",
+    "Nobody remembers"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "What is their favourite date night?",
+   "options": [
+    "Dinner out",
+    "Movie night in",
+    "Something active",
+    "Travelling"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "What do they argue about most?",
+   "options": [
+    "Directions",
+    "Thermostat",
+    "What to eat",
+    "Who's funnier"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "How did the proposal happen?",
+   "options": [
+    "At a special place",
+    "At home",
+    "On a trip",
+    "In front of family"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "What will they do on their first anniversary?",
+   "options": [
+    "Travel",
+    "Dinner",
+    "Stay in",
+    "Recreate the first date"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "who",
+   "text": "Who said: \"Just five more minutes\"?",
+   "correct": null
+  },
+  {
+   "kind": "who",
+   "text": "Who said: \"I'm not hungry\" — then ate half the other's plate?",
+   "correct": null
+  },
+  {
+   "kind": "who",
+   "text": "Who said: \"Let's just stay in tonight\"?",
+   "correct": null
+  },
+  {
+   "kind": "who",
+   "text": "Who said: \"I know a shortcut\"?",
+   "correct": null
+  }
+ ]
+}

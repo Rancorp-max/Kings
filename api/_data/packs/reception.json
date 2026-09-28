@@ -1,0 +1,74 @@
+{
+ "id": "reception",
+ "name": "Reception",
+ "emoji": "🥂",
+ "description": "The shoe game with guest voting, a toast wall on the big screen, and the final side-vs-side scoreboard reveal.",
+ "rounds": [
+  "The shoe game (guests vote, the couple reveals)",
+  "Toast wall",
+  "Final scoreboard reveal"
+ ],
+ "defaults": [
+  {
+   "kind": "shoe",
+   "text": "Who is the better cook?"
+  },
+  {
+   "kind": "shoe",
+   "text": "Who takes longer to get ready?"
+  },
+  {
+   "kind": "shoe",
+   "text": "Who said \"I love you\" first?"
+  },
+  {
+   "kind": "shoe",
+   "text": "Who is more likely to get lost?"
+  },
+  {
+   "kind": "shoe",
+   "text": "Who is the bigger romantic?"
+  },
+  {
+   "kind": "shoe",
+   "text": "Who will do the dishes?"
+  },
+  {
+   "kind": "shoe",
+   "text": "Who is the better dancer?"
+  },
+  {
+   "kind": "shoe",
+   "text": "Who apologises first?"
+  },
+  {
+   "kind": "prompt",
+   "noteKind": "toast",
+   "text": "Raise a glass! Write a short toast for {couple} — the best ones go on the big screen."
+  }
+ ],
+ "bank": [
+  {
+   "kind": "mc",
+   "text": "How many guests are at the reception tonight?",
+   "options": [
+    "Under 100",
+    "100–200",
+    "200–300",
+    "More than 300"
+   ],
+   "correct": null
+  },
+  {
+   "kind": "mc",
+   "text": "What is the couple's first dance song style?",
+   "options": [
+    "Romantic ballad",
+    "Bollywood",
+    "Pop",
+    "A surprise mashup"
+   ],
+   "correct": null
+  }
+ ]
+}

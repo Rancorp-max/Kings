@@ -93,3 +93,6 @@ td.num, th.num { text-align: right; }
 .bar { height: 10px; background: var(--brand); border-radius: 99px; }
 .pred-table td, .pred-table th { font-size: 14px; }
 .winner { background: #fff7d6; font-weight: 700; }
+.plans.plans4 { max-width: 1100px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.wed-band { max-width: 900px; margin: 0 auto; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; justify-content: space-between; background: linear-gradient(120deg, rgba(226,53,92,.14), rgba(255,200,61,.14)); border: 1px solid rgba(226,53,92,.3); border-radius: 18px; padding: 20px 24px; }
+.wed-band p { margin: 4px 0 0; }

@@ -2,7 +2,7 @@
 'use strict';
 const { spawnSync } = require('child_process');
 const path = require('path');
-const suites = ['baseline-kings.js', 'party-quiz.js', 'party-deck.js'];
+const suites = ['baseline-kings.js', 'party-quiz.js', 'party-deck.js', 'wedding.js'];
 let failed = 0;
 for (const s of suites) {
   console.log(`\n▶ ${s}`);

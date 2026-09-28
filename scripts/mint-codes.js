@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Mint single-use Party Pass codes for Etsy.
  *
- *   npm run mint-codes -- --count 500 --batch etsy-2026-09
+ *   npm run mint-codes -- --count 500 --batch etsy-2026-09 [--product party|wedding|wedding_plus]
  *
  * Writes the plaintext codes to private/codes-<batch>.csv (git-ignored — upload
  * that file to Etsy as the digital download / use it to fulfil orders) and
@@ -20,6 +20,8 @@ const arg = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i
 const count = Math.min(10000, Math.max(1, Number(arg('count', 500))));
 const batch = arg('batch', 'batch-' + new Date().toISOString().slice(0, 10));
 const toDb = args.includes('--db');
+const product = arg('product', 'party');
+if (!['party', 'wedding', 'wedding_plus'].includes(product)) { console.error('--product must be party, wedding or wedding_plus'); process.exit(1); }
 
 (async () => {
   const codes = new Set();
@@ -30,17 +32,17 @@ const toDb = args.includes('--db');
   const outDir = path.join(__dirname, '../private');
   fs.mkdirSync(outDir, { recursive: true });
   const csv = path.join(outDir, `codes-${batch}.csv`);
-  fs.writeFileSync(csv, 'code,batch\n' + list.map((c) => `${c},${batch}`).join('\n') + '\n');
+  fs.writeFileSync(csv, 'code,batch,product\n' + list.map((c) => `${c},${batch},${product}`).join('\n') + '\n');
 
   if (toDb) {
     const { getDb } = require('../api/_lib/db');
     const db = getDb();
-    for (const h of hashes) await db.set('codes', h, { batch, createdAt: Date.now() });
+    for (const h of hashes) await db.set('codes', h, { batch, product, createdAt: Date.now() });
     console.log(`Stored ${hashes.length} hashes in ${db.kind} storage.`);
   } else {
     const data = fs.existsSync(HASH_FILE) ? JSON.parse(fs.readFileSync(HASH_FILE, 'utf8')) : { batches: [] };
     if (data.batches.some((b) => b.id === batch)) throw new Error(`Batch ${batch} already exists`);
-    data.batches.push({ id: batch, createdAt: new Date().toISOString(), count: hashes.length, hashes });
+    data.batches.push({ id: batch, product, createdAt: new Date().toISOString(), count: hashes.length, hashes });
     fs.writeFileSync(HASH_FILE, JSON.stringify(data, null, 1) + '\n');
     console.log(`Appended ${hashes.length} hashes to ${path.relative(process.cwd(), HASH_FILE)} — commit + deploy to activate.`);
   }

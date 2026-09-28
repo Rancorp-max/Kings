@@ -16,12 +16,15 @@ function pageKey(p) {
 const inc = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
 const round2 = (n) => Math.round(n * 100) / 100;
 
-function aggregate({ events = [], purchases = [], aiCalls = [], pageviews = [] }, now = Date.now(), launchDate = site.launchDate) {
+function aggregate({ events = [], purchases = [], aiCalls = [], pageviews = [], weddings = [], licences = [] }, now = Date.now(), launchDate = site.launchDate) {
   const paidEvents = new Set();
   const revenueBySource = {}; const revenueByTheme = {}; const revenueByMethod = {}; const passesBySource = {};
   let revenueCents = 0;
+  const weddingRevenue = { byPlan: {}, bySource: {}, total: 0 }; const paidWeddings = new Set(); let djRevenue = 0;
   for (const p of purchases) {
     if (p.method === 'mock') continue; // test-mode clicks are not revenue
+    if (p.kind === 'wedding') { paidWeddings.add(p.weddingId); weddingRevenue.total += p.amountCents || 0; inc(weddingRevenue.byPlan, p.plan, p.amountCents || 0); inc(weddingRevenue.bySource, p.source || 'direct', p.amountCents || 0); inc(revenueByMethod, p.method || 'unknown', p.amountCents || 0); revenueCents += p.amountCents || 0; continue; }
+    if (p.kind === 'dj') { djRevenue += p.amountCents || 0; inc(revenueByMethod, p.method || 'unknown', p.amountCents || 0); revenueCents += p.amountCents || 0; continue; }
     paidEvents.add(p.eventId);
     revenueCents += p.amountCents || 0;
     inc(revenueBySource, p.source || 'direct', p.amountCents || 0);
@@ -61,14 +64,24 @@ function aggregate({ events = [], purchases = [], aiCalls = [], pageviews = [] }
     revenueBySourceUsd: mapCents(revenueBySource), revenueByThemeUsd: mapCents(revenueByTheme), revenueByMethodUsd: mapCents(revenueByMethod),
     passesBySource, eventsBySource, eventsByTheme, visitsByPage, visitsByDay,
     conversionBySource: Object.fromEntries(Object.entries(eventsBySource).map(([s, n]) => [s, round2(((passesBySource[s] || 0) / n) * 100)])),
-    rules: evaluateRules({ daysSinceLaunch, landingVisits, visitsByPage, paidEventCount: paidEvents.size }),
+    rules: evaluateRules({ daysSinceLaunch, landingVisits, visitsByPage, paidEventCount: paidEvents.size, paidWeddingCount: paidWeddings.size }),
+    weddings: {
+      created: weddings.length, paid: paidWeddings.size, revenueUsd: round2(weddingRevenue.total / 100), djRevenueUsd: round2(djRevenue / 100),
+      revenueByPlanUsd: mapCents(weddingRevenue.byPlan), revenueBySourceUsd: mapCents(weddingRevenue.bySource),
+      licencesActive: licences.filter((l) => l.status === 'active').length, licencesTotal: licences.length,
+      list: weddings.sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)).slice(0, 100).map((w) => ({
+        id: w.id, title: w.title, plan: w.plan, paid: !!w.paid, source: w.source || 'direct', createdAt: w.createdAt,
+        eventsRun: w.stats?.eventsRun || 0, guestsJoined: w.guestsJoined || 0, peakConcurrent: w.stats?.peakConcurrent || 0,
+        keepsakeDownloads: w.stats?.keepsakeDownloads || 0, purchaseFromEvent: w.purchaseFromEventName || w.stats?.purchaseFromEvent || null, aiCostUsd: round2(w.aiCostUsd || 0),
+      })),
+    },
     launch: launch ? new Date(launch).toISOString().slice(0, 10) : null, daysSinceLaunch,
   };
 }
 
 function mapCents(o) { return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, round2(v / 100)])); }
 
-function evaluateRules({ daysSinceLaunch, landingVisits, visitsByPage, paidEventCount }) {
+function evaluateRules({ daysSinceLaunch, landingVisits, visitsByPage, paidEventCount, paidWeddingCount = 0 }) {
   const weakest = LANDING_PAGES.map((p) => [p, visitsByPage[p] || 0]).sort((a, b) => a[1] - b[1]).slice(0, 3).map(([p]) => p);
   const d = daysSinceLaunch;
   const day7 = d === null || d < 7
@@ -81,7 +94,14 @@ function evaluateRules({ daysSinceLaunch, landingVisits, visitsByPage, paidEvent
     : paidEventCount < 10
       ? { status: 'kill', text: `${paidEventCount} paid events by day 30 → drop the paid tier; keep the free game as a traffic feeder.` }
       : { status: 'double-down', text: `${paidEventCount} paid events by day 30 → add retirement + anniversary themes and test US$14.99 pricing.` };
-  return { day7, day30 };
+  const day30Weddings = d === null || d < 30
+    ? { status: 'pending', text: `Weddings day-30 check in ${d === null ? '?' : 30 - d} day(s): ${paidWeddingCount} paid wedding(s) so far.` }
+    : paidWeddingCount >= 3
+      ? { status: 'double-down', text: `${paidWeddingCount} paid weddings by day 30 → prioritise the DJ/MC licence and South Asian packs.` }
+      : paidWeddingCount === 0 && paidEventCount >= 10
+        ? { status: 'kill', text: `0 paid weddings but ${paidEventCount} paid shower/birthday events by day 30 → park weddings.` }
+        : { status: 'ok', text: `${paidWeddingCount} paid wedding(s) by day 30 — no rule triggered; keep weddings as-is.` };
+  return { day7, day30, day30Weddings };
 }
 
 module.exports = { LANDING_PAGES, pageKey, aggregate, evaluateRules };

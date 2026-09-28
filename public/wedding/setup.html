@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Your wedding — PartyDeck Weddings</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/icons/favicon-48.png" sizes="48x48" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" /><link rel="stylesheet" href="/wedding.css" />
+</head>
+<body class="wed">
+  <main class="wed-wrap wed-wide">
+    <div class="row" style="justify-content:space-between"><a href="/weddings" class="small">← PartyDeck Weddings</a><span class="pill" id="planPill"></span></div>
+
+    <!-- create -->
+    <section id="vCreate" class="hidden">
+      <h1>💍 Set up your wedding games</h1>
+      <p class="center muted">One wedding, all your events. Guests join once and keep their points from the mehndi to the reception.</p>
+      <div class="card"><h2>The couple</h2>
+        <div class="row"><input class="input" id="cA" maxlength="30" placeholder="First name (e.g. Asha)" /><input class="input" id="cB" maxlength="30" placeholder="Partner's first name (e.g. Rohan)" /></div>
+        <label class="f">Title shown on screens</label><input class="input" id="cTitle" maxlength="60" placeholder="Asha & Rohan's Wedding" />
+      </div>
+      <div class="card"><h2>Teams</h2>
+        <p class="small muted">Guests pick a side when they join. Rename them or add up to 6 custom teams.</p>
+        <div id="sidesEd"></div>
+        <div class="row"><button class="btn btn-ghost btn-sm" id="addSide">➕ Add team</button>
+          <label class="small"><input type="checkbox" id="teamTotal" /> Score teams by total points (default: average per player, fairer to smaller sides)</label></div>
+      </div>
+      <div class="card"><h2>Events</h2><p class="small muted" id="evLimitNote"></p><div id="evPresets" class="grid2"></div></div>
+      <div class="card hidden" id="djBox"><h2>🎧 DJ/MC Pro</h2><p class="small">Creating this wedding with your DJ/MC Pro licence: unlimited events, 500 guests, languages and your logo on the scoreboard.</p></div>
+      <button class="btn btn-gold btn-xl btn-block" id="createBtn">💍 Create our wedding</button>
+      <p class="err" id="createErr"></p>
+    </section>
+
+    <!-- dashboard -->
+    <section id="vDash" class="hidden">
+      <h1 id="dTitle">Wedding</h1>
+      <div class="grid2">
+        <div class="card center"><h2>Guests join here</h2><div id="dQR" style="display:inline-block;background:#fff;padding:10px;border-radius:14px"></div>
+          <div class="code-box" id="dCode"></div><p class="small"><a id="dJoinLink" target="_blank" rel="noopener"></a></p>
+          <a class="btn btn-ghost btn-sm" id="dScreen" target="_blank" rel="noopener">🖥 Open big screen</a></div>
+        <div class="card"><h2>Stats</h2><div class="stat3"><div><b id="stGuests">0</b>guests</div><div><b id="stRun">0</b>events run</div><div><b id="stPeak">0</b>peak players</div></div>
+          <p class="small muted" id="stMore"></p>
+          <a class="btn btn-pink btn-block" id="dBook">📖 Keepsake book</a></div>
+      </div>
+      <div class="card"><h2>Events</h2><div class="items" id="dEvents"></div>
+        <div class="row"><select class="input" id="newEvType"></select><input class="input" type="date" id="newEvDate" /><input class="input" type="time" id="newEvTime" /><button class="btn btn-ghost btn-sm" id="addEv">➕ Add event</button></div>
+        <p class="err" id="evErr"></p></div>
+      <div class="card" id="planCard"></div>
+      <div class="card owner-only"><h2>Co-hosts <span class="pill" id="chCount"></span></h2>
+        <p class="small muted">Siblings, the planner, the DJ or MC: co-hosts can run any event from their phone. Send each one their private link.</p>
+        <div id="dCohosts"></div>
+        <div class="row"><input class="input" id="chName" maxlength="30" placeholder="Name (e.g. Priya — planner)" /><button class="btn btn-ghost btn-sm" id="addCh">➕ Add co-host</button></div>
+        <div id="chLink"></div></div>
+      <div class="card owner-only"><h2>Teams &amp; names</h2><div id="dSides"></div><button class="btn btn-ghost btn-sm" id="saveSides">Save teams</button></div>
+    </section>
+  </main>
+  <div id="toasts"></div>
+  <script async src="/vendor/qrcode-1.0.0.min.js"></script>
+  <script type="module" src="/js/wedding/setup.js"></script>
+</body>
+</html>

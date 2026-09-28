@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DJ/MC Pro — PartyDeck Weddings</title>
+  <meta name="description" content="DJ/MC Pro licence: run PartyDeck wedding games at unlimited weddings with your own logo on the scoreboard." />
+  <link rel="icon" href="/icons/favicon-48.png" sizes="48x48" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" /><link rel="stylesheet" href="/wedding.css" />
+</head>
+<body class="wed">
+  <main class="wed-wrap">
+    <a href="/games-for-djs-and-mcs" class="small">← Games for DJs &amp; MCs</a>
+    <h1>🎧 DJ/MC Pro</h1>
+    <section id="vBuy" class="hidden">
+      <div class="card"><h2 id="priceLine"></h2>
+        <ul class="small"><li>Unlimited weddings, unlimited events each</li><li>Up to 500 guests per event</li><li>8 languages + bilingual screens</li><li>Photo-book keepsake for every couple</li><li>Your logo and name on the big screen scoreboard</li></ul>
+        <label class="f">Billing email</label><input class="input" id="email" type="email" autocomplete="email" />
+        <label class="f">Your brand name (shown on screens)</label><input class="input" id="brandName" maxlength="40" placeholder="DJ Nova Entertainment" />
+        <button class="btn btn-gold btn-block" id="buy">Start my licence</button><p class="err" id="buyErr"></p></div>
+      <details class="card"><summary>I already have a licence key</summary><div class="row"><input class="input" id="restoreKey" /><button class="btn btn-ghost btn-sm" id="restore">Use key</button></div></details>
+    </section>
+    <section id="vPro" class="hidden">
+      <div class="card"><h2>Licence <span class="pill" id="status"></span></h2><p class="small" id="period"></p>
+        <p class="small muted">Licence key (keep it safe — use it to sign in on another device):</p><input class="input" id="keyShow" readonly onclick="this.select()" />
+        <div class="row" style="margin-top:8px"><button class="btn btn-ghost btn-sm" id="portal">Manage billing</button><button class="btn btn-gold btn-sm hidden" id="finish">Complete purchase</button></div></div>
+      <div class="card"><h2>Your branding</h2>
+        <label class="f">Name on screens</label><input class="input" id="bName" maxlength="40" />
+        <label class="f">Logo (PNG/JPG, shown top-left of the big screen)</label><input type="file" id="bLogo" accept="image/png,image/jpeg,image/webp" />
+        <div id="logoPrev" style="margin:8px 0"></div>
+        <button class="btn btn-ghost btn-sm" id="bSave">Save branding</button></div>
+      <div class="card"><h2>Weddings</h2><div class="items" id="wList"></div>
+        <a class="btn btn-gold btn-block" id="newWedding" href="/wedding/setup?dj=1&new=1">💍 Create a wedding</a></div>
+    </section>
+  </main>
+  <div id="toasts"></div>
+  <script type="module" src="/js/wedding/dj.js"></script>
+</body>
+</html>

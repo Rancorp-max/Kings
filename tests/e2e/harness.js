@@ -16,7 +16,7 @@ async function waitForHttp(url, ms = 15000) {
   throw new Error('server did not start: ' + url);
 }
 
-async function startStack({ port = 3100, peerPort = 9100, env = {} } = {}) {
+async function startStack({ port = 3100, peerPort = 9100, env = {}, allowFonts = false } = {}) {
   const proc = spawn(process.execPath, ['scripts/dev-server.js', '--port', String(port), '--peer-port', String(peerPort)], {
     cwd: ROOT, env: { ...process.env, DATA_DIR: path.join(ROOT, '.data/e2e'), ...env }, stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -34,7 +34,7 @@ async function startStack({ port = 3100, peerPort = 9100, env = {} } = {}) {
   async function player(tag, { width = 375, height = 812 } = {}) {
     const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, acceptDownloads: true });
     // Keep tests hermetic: only our own server is reachable.
-    await ctx.route(/^https?:\/\/(?!localhost)/, (r) => r.abort());
+    await ctx.route(allowFonts ? /^https?:\/\/(?!localhost|fonts\.googleapis\.com|fonts\.gstatic\.com)/ : /^https?:\/\/(?!localhost)/, (r) => r.abort());
     ctx.on('page', (pg) => pg.on('dialog', (d) => d.accept()));
     const page = await ctx.newPage();
     page.on('pageerror', (e) => errors.push(`${tag}: ${e.message}`));

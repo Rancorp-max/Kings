@@ -1,7 +1,7 @@
 // Minimal PDF writer (standard Type1 fonts, WinAnsi text, shapes) + the keepsake layout.
 // Pure module — runs in the browser and in Node tests. No dependencies.
 
-export const PAPER = { letter: [612, 792], a4: [595.28, 841.89] };
+export const PAPER = { letter: [612, 792], a4: [595.28, 841.89], photo8: [576, 576] };
 
 // Glyph widths (1/1000 em) for ASCII 32..126 from the standard Helvetica AFMs.
 const HELV = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
@@ -156,5 +156,70 @@ export function buildKeepsake(entries, { names = 'You', theme, themeName = 'Part
     doc.text(`— ${e.name}`, w / 2, cy + 44, { font: 'F2', size: 15, color: pal.ink, align: 'center' });
     doc.text(`${themeName} · ${date}`, w / 2, cy - 26, { size: 9, color: '#8a8a8a', align: 'center' });
   }
+  return doc.build();
+}
+
+// ------------------------------------------------------------------ wedding keepsake book
+// True if every character can be drawn with the standard PDF fonts (Latin-1 + cp1252 punctuation).
+export function isLatinOnly(text) {
+  for (const ch of String(text ?? '').normalize('NFC')) {
+    const c = ch.codePointAt(0);
+    if (c > 255 && !CP1252[ch] && !/\p{Extended_Pictographic}|️|‍/u.test(ch)) return false;
+  }
+  return true;
+}
+
+const KIND_SHORT = { advice: 'ADVICE', wish: 'WISH', prediction: 'PREDICTION', toast: 'TOAST', story: 'STORY' };
+
+/* book: { title, names, dates, sides:[{id,name,color}], events:[{id,name,date}], notes:[{eventId,side,name,kind,text}],
+ *         scores:{ sides:{id:pts}, top:[{name,pts}] } }  opts: { paper, watermark, brand } */
+export function buildWeddingBook(book, { paper = 'letter', watermark = false, brand = 'PartyDeck' } = {}) {
+  const doc = new PdfDoc(paper); const { w, h } = doc; const small = paper === 'photo8';
+  const m = small ? 36 : 48; const gold = '#b8862b'; const plum = '#4a1840'; const soft = '#fbf4ea';
+  const perPage = small ? 2 : 3;
+  const stamp = () => { if (watermark) doc.text(`Made with ${brand} — free trial`, w / 2, 16, { size: 7, color: '#999999', align: 'center' }); };
+  const frame = () => { doc.rect(0, 0, w, h, { fill: soft }); doc.roundRect(m / 2, m / 2, w - m, h - m, 14, { stroke: gold, lw: 1.2 }); stamp(); };
+  const sideName = (id) => book.sides.find((s) => s.id === id)?.name || '';
+
+  // Cover
+  doc.page(); frame();
+  doc.text('OUR WEDDING KEEPSAKE', w / 2, h - (small ? 110 : 170), { font: 'F2', size: small ? 11 : 13, color: gold, align: 'center' });
+  let y = doc.para(book.names || book.title, m + 20, h / 2 + (small ? 50 : 80), w - 2 * m - 40, { font: 'F4', size: small ? 34 : 44, align: 'center', color: plum, leading: 1.15, maxLines: 3 });
+  y = doc.para(book.dates || '', m + 20, y - 12, w - 2 * m - 40, { font: 'F3', size: small ? 14 : 17, align: 'center', color: plum });
+  doc.text(`${book.notes.length} wishes from ${new Set(book.notes.map((n) => n.name)).size} guests across ${book.events.length} event${book.events.length === 1 ? '' : 's'}`, w / 2, m + 50, { size: small ? 9 : 11, color: gold, align: 'center' });
+
+  // Events, grouped by side
+  for (const ev of book.events) {
+    const notes = book.notes.filter((n) => n.eventId === ev.id);
+    if (!notes.length) continue;
+    const groups = book.sides.map((s) => ({ side: s, notes: notes.filter((n) => n.side === s.id) })).filter((g) => g.notes.length);
+    for (const g of groups) {
+      for (let i = 0; i < g.notes.length; i += perPage) {
+        doc.page(); frame();
+        doc.text(`${ev.name.toUpperCase()}${ev.date ? ' · ' + ev.date : ''}`, w / 2, h - m - 14, { font: 'F2', size: small ? 9 : 11, color: gold, align: 'center' });
+        doc.text(g.side.name, w / 2, h - m - (small ? 32 : 36), { font: 'F4', size: small ? 15 : 20, color: plum, align: 'center' });
+        const slotH = (h - 2 * m - (small ? 70 : 90)) / perPage; let top = h - m - (small ? 58 : 70);
+        for (const n of g.notes.slice(i, i + perPage)) {
+          const bx = m + 10; const bw = w - 2 * m - 20; const bh = slotH - 12;
+          doc.roundRect(bx, top - bh, bw, bh, 12, { fill: '#ffffff', stroke: '#e8d7b8', lw: 0.8 });
+          doc.text(KIND_SHORT[n.kind] || 'NOTE', bx + 14, top - 20, { font: 'F2', size: 8, color: gold });
+          const body = toWinAnsi(n.text); const size = body.length > 200 ? 11 : small ? 12 : 14;
+          doc.para(`“${body}”`, bx + 14, top - 40, bw - 28, { font: 'F3', size, leading: 1.35, color: plum, maxLines: Math.floor((bh - 60) / (size * 1.35)) });
+          doc.text(`— ${n.name}`, bx + bw - 14, top - bh + 14, { font: 'F2', size: small ? 9 : 10, color: plum, align: 'right' });
+          top -= slotH;
+        }
+      }
+    }
+  }
+
+  // Final scores
+  doc.page(); frame();
+  doc.text('FINAL SCORES', w / 2, h - m - 30, { font: 'F2', size: small ? 13 : 16, color: gold, align: 'center' });
+  const sides = Object.entries(book.scores?.sides || {}).sort((a, b) => b[1] - a[1]);
+  let sy = h - m - (small ? 70 : 90);
+  sides.forEach(([id, pts], i) => { doc.text(`${i === 0 ? 'Winners: ' : ''}${sideName(id)}`, m + 30, sy, { font: i === 0 ? 'F4' : 'F1', size: small ? 14 : 18, color: plum }); doc.text(`${pts.toLocaleString('en-US')} pts`, w - m - 30, sy, { font: 'F2', size: small ? 14 : 18, color: plum, align: 'right' }); sy -= small ? 24 : 30; });
+  sy -= 16;
+  doc.text('Top guests', m + 30, sy, { font: 'F2', size: small ? 11 : 13, color: gold }); sy -= small ? 20 : 24;
+  for (const [i, r] of (book.scores?.top || []).slice(0, 10).entries()) { doc.text(`${i + 1}. ${r.name}`, m + 30, sy, { size: small ? 10 : 12, color: plum }); doc.text(`${r.pts.toLocaleString('en-US')}`, w - m - 30, sy, { size: small ? 10 : 12, color: plum, align: 'right' }); sy -= small ? 16 : 19; if (sy < m + 30) break; }
   return doc.build();
 }

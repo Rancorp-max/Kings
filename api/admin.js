@@ -16,8 +16,14 @@ function checkPassword(given) {
 module.exports = handler(['GET'], async (req, res) => {
   checkPassword(req.headers['x-admin-password']);
   const db = getDb();
-  const [events, purchases, aiCalls, pageviews] = await Promise.all(['events', 'purchases', 'ai_calls', 'pageviews'].map((c) => db.list(c)));
-  const stats = aggregate({ events, purchases, aiCalls, pageviews });
+  const [events, purchases, aiCalls, pageviews, weddings, licences] = await Promise.all(['events', 'purchases', 'ai_calls', 'pageviews', 'weddings', 'licences'].map((c) => db.list(c)));
+  // Per-wedding extras: sharded guest counters and the name of the event a purchase started from.
+  const WD = require('./_lib/wedding');
+  for (const w of weddings.slice(0, 100)) {
+    w.guestsJoined = await WD.guestCount(w.id, db);
+    if (w.stats?.purchaseFromEvent) { const e = await db.get(WD.col.events(w.id), w.stats.purchaseFromEvent); w.purchaseFromEventName = e?.name || w.stats.purchaseFromEvent; }
+  }
+  const stats = aggregate({ events, purchases, aiCalls, pageviews, weddings, licences });
   stats.storage = { kind: db.kind, ephemeral: !!db.ephemeral };
   stats.config = {
     stripe: process.env.STRIPE_SECRET_KEY ? (process.env.STRIPE_SECRET_KEY.startsWith('sk_live') ? 'live' : 'test') : 'not configured',

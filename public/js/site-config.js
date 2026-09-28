@@ -49,5 +49,108 @@ export const SITE = {
   "ageGate": {
     "kingsCupMinAge": 19
   },
-  "launchDate": null
+  "launchDate": null,
+  "weddings": {
+    "plans": {
+      "trial": {
+        "label": "Free trial",
+        "priceCents": 0,
+        "maxEvents": 1,
+        "maxGuests": 25,
+        "languages": false,
+        "photobook": false,
+        "generationsPerEvent": 1,
+        "brand": false,
+        "watermark": true
+      },
+      "wedding": {
+        "label": "Wedding Pass",
+        "priceCents": 4900,
+        "maxEvents": 3,
+        "maxGuests": 150,
+        "languages": false,
+        "photobook": false,
+        "generationsPerEvent": 3,
+        "brand": false,
+        "watermark": false
+      },
+      "plus": {
+        "label": "Wedding Pass Plus",
+        "priceCents": 9900,
+        "maxEvents": 999,
+        "maxGuests": 500,
+        "languages": true,
+        "photobook": true,
+        "generationsPerEvent": 5,
+        "brand": false,
+        "watermark": false
+      },
+      "dj": {
+        "label": "DJ/MC Pro",
+        "priceCents": 19900,
+        "interval": "year",
+        "maxEvents": 999,
+        "maxGuests": 500,
+        "languages": true,
+        "photobook": true,
+        "generationsPerEvent": 5,
+        "brand": true,
+        "watermark": false
+      }
+    },
+    "passValidDays": 120,
+    "maxCohosts": 5,
+    "answerGraceMs": 1500,
+    "languages": {
+      "en": {
+        "name": "English",
+        "native": "English",
+        "font": null,
+        "rtl": false
+      },
+      "hi": {
+        "name": "Hindi",
+        "native": "हिन्दी",
+        "font": "Noto Sans Devanagari",
+        "rtl": false
+      },
+      "pa": {
+        "name": "Punjabi",
+        "native": "ਪੰਜਾਬੀ",
+        "font": "Noto Sans Gurmukhi",
+        "rtl": false
+      },
+      "ur": {
+        "name": "Urdu",
+        "native": "اردو",
+        "font": "Noto Nastaliq Urdu",
+        "rtl": true
+      },
+      "gu": {
+        "name": "Gujarati",
+        "native": "ગુજરાતી",
+        "font": "Noto Sans Gujarati",
+        "rtl": false
+      },
+      "ta": {
+        "name": "Tamil",
+        "native": "தமிழ்",
+        "font": "Noto Sans Tamil",
+        "rtl": false
+      },
+      "es": {
+        "name": "Spanish",
+        "native": "Español",
+        "font": null,
+        "rtl": false
+      },
+      "fr": {
+        "name": "French",
+        "native": "Français",
+        "font": null,
+        "rtl": false
+      }
+    }
+  },
+  "firebaseWeb": null
 };

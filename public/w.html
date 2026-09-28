@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <title>Wedding games — PartyDeck</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#2a0f2e" />
+  <link rel="icon" href="/icons/favicon-48.png" sizes="48x48" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" /><link rel="stylesheet" href="/wedding.css" />
+</head>
+<body class="wed">
+  <div class="offline-bar hidden" id="offlineBar"></div>
+  <main class="wed-wrap">
+    <!-- join -->
+    <section id="vJoin" class="hidden">
+      <h1 id="jTitle">💍</h1>
+      <p class="center muted" id="jCouple"></p>
+      <div class="card">
+        <div class="row" id="codeRow"><label class="f" for="jCode" data-i18n="wedding_code"></label><input class="input" id="jCode" maxlength="8" autocapitalize="characters" /></div>
+        <label class="f" for="jName" data-i18n="your_name"></label>
+        <input class="input" id="jName" maxlength="24" autocomplete="nickname" />
+        <label class="f" data-i18n="pick_side"></label>
+        <div class="side-pick" id="jSides"></div>
+        <label class="f" data-i18n="pick_avatar"></label>
+        <div class="av-grid" id="jAvatars"></div>
+        <label class="switch" style="margin-top:12px"><input type="checkbox" id="jGroup" /><span class="slider"></span><span data-i18n="group_mode"></span></label>
+        <div class="row hidden" id="jGroupRow"><label class="f" for="jGroupSize" data-i18n="group_size"></label><input class="input" id="jGroupSize" type="number" min="2" max="20" value="4" style="max-width:90px" /></div>
+        <button class="btn btn-gold btn-xl btn-block" id="jGo" data-i18n="join_btn"></button>
+        <p class="err" id="jErr"></p>
+      </div>
+      <details class="card"><summary data-i18n="have_code"></summary>
+        <label class="f" for="rCode" data-i18n="guest_code"></label>
+        <div class="row"><input class="input" id="rCode" inputmode="numeric" maxlength="6" /><button class="btn btn-ghost" id="rGo" data-i18n="resume_btn"></button></div>
+        <p class="err" id="rErr"></p>
+      </details>
+      <div class="center"><select class="lang-sel" id="jLang" aria-label="Language"></select></div>
+    </section>
+
+    <!-- play -->
+    <section id="vPlay" class="hidden">
+      <div class="g-head">
+        <div class="g-me" id="gMe"></div>
+        <div class="g-score" id="gScore"></div>
+      </div>
+      <div class="row" style="justify-content:space-between;margin-top:8px"><span class="side-chip" id="gSide"></span><select class="lang-sel" id="gLang" aria-label="Language"></select></div>
+      <div class="card hidden" id="gCodeCard"><span data-i18n="your_code_is"></span><div class="code-box" id="gCode"></div></div>
+      <div class="card stage" id="gStage"></div>
+      <button class="btn btn-ghost btn-block" id="gWish">💌 <span data-i18n="write_note"></span></button>
+      <p class="brand-line hidden" id="gBrand"></p>
+    </section>
+  </main>
+
+  <div class="sheet hidden" id="noteSheet">
+    <form class="sheet-card" id="noteForm">
+      <h3 data-i18n="write_note"></h3>
+      <div class="seg" id="noteKinds"></div>
+      <textarea class="input" id="noteText" rows="4" maxlength="300" style="margin-top:10px"></textarea>
+      <button class="btn btn-gold btn-block" type="submit" data-i18n="send"></button>
+      <button class="btn btn-block" type="button" data-close>✕</button>
+    </form>
+  </div>
+  <div id="toasts"></div>
+  <script type="module" src="/js/wedding/guest.js"></script>
+</body>
+</html>

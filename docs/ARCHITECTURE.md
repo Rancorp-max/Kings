@@ -46,3 +46,32 @@ site.config.json     brand name, pricing, limits, AI models: the one file to ren
 **Real-time:** unchanged model. The host's browser is the server and guests connect over WebRTC. Quiz answers are timed on the host's clock (no client clock trust). Correct answers never leave the host before the reveal. Keepsake notes stay on the host's device.
 
 **Limits and gating:** the host's engine enforces the player cap (8 free / 40 Pass) and the number of playable AI questions/cards. The server enforces AI generations (1 free / 3 Pass). The keepsake watermark is applied client-side, so it's a nudge, not DRM.
+
+---
+
+# Weddings (separate product, same deploy)
+
+Weddings are a **separate option** next to the party rooms. The party rooms are unchanged and stay peer-to-peer. A host's phone can't serve 500 guests over WebRTC, so weddings are **server-driven**:
+
+```
+guest phone ──POST /api/wedding (join, answer, ping, note)──▶ Firestore (per-guest docs; no shared hot doc)
+host/co-host ─POST /api/wedding (open, reveal, board, finale)─▶ tally server-side → ONE write to wedding_live/{id}
+every screen ─GET /api/wedding-live (edge-cached 1 s + 700 ms memo)◀── or Firestore onSnapshot if firebaseWeb is set
+```
+
+- **Pages:** `/wedding/setup` (create + owner dashboard), `/wedding/host` (run/prepare/moderate, from a phone or the projector laptop), `/wedding/screen` (projector, animated finale), `/w` (guests), `/wedding/book` (keepsake book, Letter/A4/8×8), `/dj` (DJ/MC Pro licence), `/weddings` (product page) + 7 guide pages generated from `scripts/pages/weddings.js`.
+- **Data** (`api/_lib/wedding.js` header has the full list):
+  - `weddings/{id}`: couple, sides/teams, plan, co-host token hashes, stats.
+  - `wedding_events/{id}/events`: date, theme pack, language(s), items; AI drafts stay out of `items` until approved.
+  - `wedding_guests/{id}/guests`: name, side, avatar, family group size, secret hash, 6-digit resume code hash.
+  - `wedding_answers/...`: one doc per guest per item, exclusive create, so retries are idempotent.
+  - `wedding_scores/{id}`: one doc, written once per reveal.
+  - `wedding_live/{id}`: the only doc screens read.
+  - Presence and guest counters are **sharded** (10 shards) for peak-concurrency tracking.
+- **Identity:** guests join once per wedding and keep name/side/points across events. A 6-digit guest code restores them on another device (the secret rotates; failed tries are rate-limited). Hosts: an owner token plus up to 5 co-host tokens (hashes only).
+- **Scoring:** 500 + a speed bonus up to 500 per correct answer. Votes add a side bonus. Sides are ranked by **average per playing member** (default, fair to small families) or total. A family group counts as one player for points; its vote is weighted by group size. For a shoe game "split", the room's vote is shown and nobody scores.
+- **Bad Wi-Fi:** answers go into a localStorage queue first and retry every 3 s / on `online`. The server accepts answers up to `answerGraceMs` after the deadline. Phones catch up from the live doc and `/me`.
+- **Safety:** `WEDDING_SYSTEM_PROMPT` (never in-laws, dowry, caste, religion, weight, exes, fertility, drinking pressure, lyrics). Then a blocklist plus a claude-haiku-4-5 check. Generated items are drafts until a host approves them. Guest notes are blocklisted plus model-checked; anything flagged (or a model failure) goes to **pending** for host approval, and only approved notes reach the screen or the keepsake.
+- **Languages:** en, hi, pa, ur, gu, ta, es, fr (Plus). The UI strings are in `public/js/wedding/i18n.js`. Noto fonts load on demand. Urdu uses `dir=rtl` with `dir=auto`/`ltr` islands for mixed text and emoji. Items can carry a second-language line, and screens show both.
+- **Billing** (`api/_lib/billing.js`): Wedding Pass / Plus are one-time Checkout payments (upgrades never downgrade; valid `passValidDays`). DJ/MC Pro is a yearly Stripe subscription tracked in `licences/` (token hash, status, 3-day grace, brand name and logo applied to every wedding the licence creates). Wedding Etsy codes use the same hashed single-use codes, typed by `product`.
+- **Load:** `npm run test:load` simulates 500 guests (join, polling, answers, votes with family weights, notes). It checks exact tallies and prints p50/p95 latency.

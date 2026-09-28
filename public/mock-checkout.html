@@ -20,7 +20,24 @@
   <script type="module">
     import { SITE } from './js/site-config.js';
     const p = new URLSearchParams(location.search);
+    const kind = p.get('kind');
     const ev = JSON.parse(localStorage.getItem('pd_event') || 'null');
+    if (kind === 'wedding' || kind === 'dj') {
+      const plan = kind === 'dj' ? SITE.weddings.plans.dj : SITE.weddings.plans[p.get('plan') === 'plus' ? 'plus' : 'wedding'];
+      document.querySelector('h1').textContent = plan.label;
+      document.getElementById('price').textContent = `US$${(plan.priceCents / 100).toFixed(2)}${plan.interval ? ' / year' : ' · one wedding'}`;
+      document.getElementById('features').innerHTML = [`${plan.maxEvents >= 999 ? 'Unlimited' : plan.maxEvents} events`, `Up to ${plan.maxGuests} guests`, plan.languages ? '8 languages' : null, plan.brand ? 'Your logo on the scoreboard' : null].filter(Boolean).map((f) => `<li>${f}</li>`).join('');
+      const w = p.get('w'); const hosts = JSON.parse(localStorage.getItem('pdw_hosts') || '{}');
+      document.getElementById('cancel').href = kind === 'dj' ? '/dj?paid=0' : `/wedding/setup?w=${w}&paid=0`;
+      document.getElementById('mockPay').onclick = async (e) => {
+        e.target.disabled = true;
+        const body = kind === 'dj' ? { action: 'mock-complete', kind, licenceToken: JSON.parse(localStorage.getItem('pdw_licence') || 'null') } : { action: 'mock-complete', kind, w, token: hosts[w], plan: p.get('plan'), fromEvent: p.get('from') || '' };
+        const r = await fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+        const d = await r.json();
+        if (!r.ok) { document.getElementById('err').textContent = d.error || 'Failed'; e.target.disabled = false; return; }
+        location.href = kind === 'dj' ? '/dj?paid=1' : `/wedding/setup?w=${w}&paid=1`;
+      };
+    } else {
     document.getElementById('price').textContent = `US$${(SITE.pricing.passPriceCents / 100).toFixed(2)} · one event · ${SITE.pricing.passDays} days`;
     document.getElementById('features').innerHTML = [`Up to ${SITE.limits.pass.maxPlayers} players`, 'Personalised AI questions & cards', 'Keepsake PDF without watermark'].map((f) => `<li>${f}</li>`).join('');
     document.getElementById('cancel').href = `/play?event=${encodeURIComponent(p.get('event') || '')}&paid=0`;
@@ -31,6 +48,7 @@
       if (!r.ok) { document.getElementById('err').textContent = d.error || 'Failed'; e.target.disabled = false; return; }
       location.href = `/play?event=${encodeURIComponent(ev.id)}&paid=1`;
     };
+    }
   </script>
 </body>
 </html>

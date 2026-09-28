@@ -25,6 +25,11 @@ class FileDb {
     return run;
   }
   _save() {
+    if (!this.file || this._pending) return;
+    // Coalesce bursts (e.g. 500 answers in a second) into one disk write.
+    this._pending = setTimeout(() => { this._pending = null; this._flush(); }, 50);
+  }
+  _flush() {
     if (!this.file) return;
     fs.mkdirSync(path.dirname(this.file), { recursive: true });
     const tmp = this.file + '.tmp';
@@ -55,6 +60,13 @@ class FileDb {
     });
   }
   list(c) { return this._op(() => Object.entries(this._col(c)).map(([id, d]) => ({ id, ...structuredClone(d) }))); }
+  count(c) { return this._op(() => Object.keys(this._col(c)).length); }
+  // Minimal filtered read: docs where d[field] > value (or ==), newest first, capped.
+  query(c, { field, op = '>', value, limit = 500 } = {}) {
+    return this._op(() => Object.entries(this._col(c)).map(([id, d]) => ({ id, ...structuredClone(d) }))
+      .filter((d) => (op === '==' ? d[field] === value : d[field] > value))
+      .sort((a, b) => (b[field] > a[field] ? 1 : -1)).slice(0, limit));
+  }
 }
 
 class FirestoreDb {
@@ -93,6 +105,11 @@ class FirestoreDb {
     });
   }
   async list(c) { const s = await this.db.collection(c).get(); return s.docs.map((d) => ({ id: d.id, ...d.data() })); }
+  async count(c) { const s = await this.db.collection(c).count().get(); return s.data().count; }
+  async query(c, { field, op = '>', value, limit = 500 } = {}) {
+    const s = await this.db.collection(c).where(field, op, value).orderBy(field, 'desc').limit(limit).get();
+    return s.docs.map((d) => ({ id: d.id, ...d.data() }));
+  }
 }
 
 let instance = null;

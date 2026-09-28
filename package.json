@@ -10,7 +10,8 @@
     "build:pages": "node scripts/build-pages.js",
     "mint-codes": "node scripts/mint-codes.js",
     "test": "node --test tests/unit/*.test.mjs",
-    "test:e2e": "node tests/e2e/run.js"
+    "test:e2e": "node tests/e2e/run.js",
+    "test:load": "node tests/load/wedding-load.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

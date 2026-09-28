@@ -7,6 +7,7 @@ Party games for baby showers, bridal showers and milestone birthdays (plus King'
 - **Keepsake:** guests leave advice, wishes and predictions; the host downloads a print-ready PDF (US Letter / A4).
 - **Personalised with Claude:** the host adds facts, and `/api/generate-deck` writes quiz questions + 20 custom cards (validated and safety-filtered, and the host edits them).
 - **Money:** free for up to 8 players; a US$12.99 **Party Pass** per event (Stripe Checkout or Etsy access codes at `/redeem`) unlocks 40 players, personalisation and a watermark-free keepsake.
+- **Weddings (separate option, `/weddings`):** multi-day, multi-event weddings (mehndi/haldi, sangeet, rehearsal/welcome, reception packs) for up to 500 guests per event. Guests join once and keep name, side and points across events (6-digit code to resume on another phone). Owner + 5 co-hosts; a projector screen with a side-vs-side scoreboard and animated finale; 8 languages incl. RTL Urdu; host approval of AI questions and moderation of guest messages; keepsake book (Letter/A4/8×8). Pricing: free trial, Wedding Pass US$49, Plus US$99, DJ/MC Pro US$199/yr.
 - **Tracking:** first-touch UTM/referrer per party, `purchases` in Firestore, and a password-protected `/admin` dashboard with the kill/double-down rules.
 
 Docs: [architecture](docs/ARCHITECTURE.md) · [kill/double-down rules](docs/RULES.md) · [launch checklist & costs](docs/LAUNCH-CHECKLIST.md)
@@ -28,7 +29,8 @@ With no keys, set `ALLOW_MOCK_PAYMENTS=1` and `MOCK_AI=1` in `.env.local` to cli
 ```bash
 npm test                         # unit: scoring, code redemption, Stripe webhook, JSON validator, PDF, admin stats
 cd tests && npm install && cd ..
-npm run test:e2e                 # Playwright: King's Cup regression; 1 host + 6 guests quiz with reconnection; free cap + Etsy code + host reload
+npm run test:e2e                 # Playwright: King's Cup regression; 1 host + 6 guests quiz with reconnection; free cap + Etsy code + host reload; wedding (owner + co-host + projector + 6 guests, RTL, offline queue, DJ licence)
+npm run test:load                # 500 simulated wedding guests against the dev server: exact tallies + latency p50/p95
 FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 node --test tests/unit/firestore.emulator.mjs   # optional, against the Firestore emulator
 ```
 
