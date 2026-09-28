@@ -1,219 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-  <title>King's Cup — Party Game</title>
-  <meta name="description" content="Multiplayer King's Cup. Host a room, friends join from their phones, pick an avatar and take turns drawing cards together in real time." />
-  <meta name="theme-color" content="#1a0b3d" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PartyDeck — Party games on everyone's phone for baby showers, bridal showers &amp; birthdays</title>
+<meta name="description" content="Host a party game room in seconds. Guests join on their phones for a &quot;who knows them best&quot; quiz, prompt cards and a printable keepsake. Free for up to 8 players." />
+<link rel="canonical" href="https://kings-gamma.vercel.app/" />
+<meta name="theme-color" content="#2a0f5c" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="PartyDeck" />
+<meta property="og:title" content="PartyDeck — Party games on everyone's phone for baby showers, bridal showers &amp; birthdays" />
+<meta property="og:description" content="Host a party game room in seconds. Guests join on their phones for a &quot;who knows them best&quot; quiz, prompt cards and a printable keepsake. Free for up to 8 players." />
+<meta property="og:url" content="https://kings-gamma.vercel.app/" />
+<meta property="og:image" content="https://kings-gamma.vercel.app/og/home.png" />
+<meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/icons/favicon-48.png" sizes="48x48" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="stylesheet" href="/site.css" />
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"PartyDeck","url":"https://kings-gamma.vercel.app/","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":[{"@type":"Offer","price":"0","priceCurrency":"USD","name":"Free"},{"@type":"Offer","price":"12.99","priceCurrency":"USD","name":"Party Pass"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Do guests need an app or account?","acceptedAnswer":{"@type":"Answer","text":"No. Guests open a link or scan a QR code, choose an avatar and a name, and play in their browser."}},{"@type":"Question","name":"What does it cost?","acceptedAnswer":{"@type":"Answer","text":"Every theme is free for up to 8 players. A Party Pass (US$12.99, one payment per event) unlocks up to 40 players, personalised questions and a keepsake without watermark, valid for 7 days."}},{"@type":"Question","name":"What is the keepsake?","acceptedAnswer":{"@type":"Answer","text":"Guests leave a piece of advice, a wish or a prediction during the party. The host downloads a print-ready PDF (US Letter or A4) with a cover and one card per guest."}},{"@type":"Question","name":"Can people join remotely?","acceptedAnswer":{"@type":"Answer","text":"Yes — anyone with the room code can play from anywhere. Share the host screen on a video call for hybrid parties."}}]}</script>
 </head>
-<body>
-  <!-- Animated background -->
-  <div class="bg" aria-hidden="true">
-    <div class="bg-glow g1"></div><div class="bg-glow g2"></div><div class="bg-glow g3"></div>
-    <div class="bg-suits" id="bgSuits"></div>
+<body class="">
+<header class="nav"><a class="logo" href="/">🎉 PartyDeck</a><nav><a href="/baby-shower-games-on-phones">Baby shower</a><a href="/bridal-shower-games">Bridal shower</a><a href="/40th-birthday-party-games">Birthdays</a><a class="nav-cta" href="/play?host=1">Start a free room</a></nav></header>
+
+<main>
+<section class="hero">
+  <div class="hero-in">
+    <p class="kicker">One host, everyone plays on their phones.</p>
+    <h1>Party games for showers &amp; birthdays — played on everyone's phone</h1>
+    <p class="lede">Host on a laptop, tablet or phone. Guests join with a 4-letter code, pick an avatar, and play a quiz about the guest of honour, draw prompt cards and leave notes for a printable keepsake.</p>
+    <div class="cta-row"><a class="cta" href="/play?host=1">🎉 Start a free room</a><a class="cta ghost" href="/play">Join a room</a></div>
+    <p class="small light">Free for up to 8 players · no app · no sign-up</p>
   </div>
-  <canvas id="confetti" aria-hidden="true"></canvas>
-  <div id="reactions" aria-hidden="true"></div>
-
-  <main id="app">
-    <!-- ============ HOME ============ -->
-    <section class="screen" id="screen-home">
-      <div class="home-wrap">
-        <div class="fan" aria-hidden="true">
-          <div class="fan-card c1"><span>A</span><i>♠</i></div>
-          <div class="fan-card c2 red"><span>Q</span><i>♥</i></div>
-          <div class="fan-card c3"><span>K</span><i>♣</i></div>
-          <div class="fan-card c4 red"><span>J</span><i>♦</i></div>
-        </div>
-        <h1 class="logo"><span class="logo-crown">👑</span>KING'S<br><span class="logo-cup">CUP</span></h1>
-        <p class="tagline">Grab your phones. Pick a face. Pull a card. Chaos ensues.</p>
-
-        <div class="home-actions">
-          <button class="btn btn-gold btn-xl" id="btnHost">🎉 Host a Game</button>
-          <div class="or"><span>or join your crew</span></div>
-          <form class="join-row" id="joinForm" autocomplete="off">
-            <input id="joinCode" class="input code-input" maxlength="5" placeholder="CODE" inputmode="text" autocapitalize="characters" spellcheck="false" aria-label="Room code" />
-            <button class="btn btn-pink" type="submit">Join ➜</button>
-          </form>
-        </div>
-        <button class="link-btn" id="btnHowTo">📜 How to play</button>
-      </div>
-    </section>
-
-    <!-- ============ PROFILE ============ -->
-    <section class="screen" id="screen-profile">
-      <div class="panel profile">
-        <button class="back-btn" data-go="home" aria-label="Back">←</button>
-        <h2 class="title" id="profileTitle">Who are you?</h2>
-        <p class="sub" id="profileSub">Pick your avatar and name</p>
-
-        <div class="avatar-preview-wrap">
-          <div class="avatar avatar-xl" id="avatarPreview"></div>
-          <button class="shuffle-btn" id="btnShuffleAvatar" title="Random avatar">🎲</button>
-        </div>
-
-        <input id="nameInput" class="input name-input" maxlength="16" placeholder="Your name" autocomplete="nickname" aria-label="Your name" />
-
-        <div class="label">Avatar</div>
-        <div class="emoji-grid" id="emojiGrid"></div>
-        <div class="label">Colour</div>
-        <div class="color-row" id="colorRow"></div>
-
-        <button class="btn btn-gold btn-xl btn-block" id="btnProfileGo">Let's go! 🚀</button>
-        <p class="error" id="profileError"></p>
-      </div>
-    </section>
-
-    <!-- ============ LOBBY ============ -->
-    <section class="screen" id="screen-lobby">
-      <div class="panel lobby">
-        <button class="back-btn" id="btnLeaveLobby" aria-label="Leave">←</button>
-        <div class="label center">Room code</div>
-        <div class="room-code" id="lobbyCode">-----</div>
-        <div class="share-row">
-          <button class="btn btn-ghost" id="btnShare">🔗 Share invite</button>
-          <button class="btn btn-ghost" id="btnQR">📱 QR code</button>
-        </div>
-        <div class="qr-box hidden" id="qrBox"><div id="qr"></div><small>Scan to join</small></div>
-
-        <div class="lobby-head">
-          <h3>Players <span class="pill" id="lobbyCount">0</span></h3>
-        </div>
-        <div class="player-grid" id="lobbyPlayers"></div>
-
-        <div class="host-only settings">
-          <label class="switch">
-            <input type="checkbox" id="gentleToggle" checked />
-            <span class="slider"></span>
-            <span>Gentle mode <small>(say "sip / penalty" instead of "drink")</small></span>
-          </label>
-        </div>
-
-        <button class="btn btn-gold btn-xl btn-block host-only" id="btnStart">🃏 Start the game</button>
-        <div class="waiting guest-only">Waiting for the host to start<span class="dots"><i>.</i><i>.</i><i>.</i></span></div>
-      </div>
-    </section>
-
-    <!-- ============ GAME ============ -->
-    <section class="screen" id="screen-game">
-      <header class="topbar">
-        <div class="chip" id="gameCode" title="Room code">#-----</div>
-        <div class="cup-meter" title="Kings drawn">
-          <div class="cup">
-            <div class="cup-fill" id="cupFill"></div>
-            <span class="cup-emoji">🏆</span>
-          </div>
-          <div class="cup-text"><b id="kingsCount">0</b>/4 Kings</div>
-        </div>
-        <div class="chip" title="Cards left">🂠 <b id="deckLeft">52</b></div>
-        <button class="icon-btn" id="btnMenu" aria-label="Menu">☰</button>
-      </header>
-
-      <div class="rail" id="playerRail"></div>
-
-      <div class="turn-banner" id="turnBanner"></div>
-
-      <div class="table">
-        <div class="deck-zone">
-          <button class="deck" id="deck" aria-label="Draw a card" disabled>
-            <div class="deck-stack"><div class="card-back"></div><div class="card-back"></div><div class="card-back"></div></div>
-            <div class="deck-label" id="deckLabel">TAP TO DRAW</div>
-          </button>
-          <div class="card-3d" id="cardWrap">
-            <div class="card-inner" id="cardInner">
-              <div class="card-face card-front-face" id="cardBackFace"><div class="card-back big"></div></div>
-              <div class="card-face card-rank-face" id="cardFace">
-                <div class="corner tl"><b id="cRank1">A</b><i id="cSuit1">♠</i></div>
-                <div class="corner br"><b id="cRank2">A</b><i id="cSuit2">♠</i></div>
-                <div class="card-center"><div class="card-big-suit" id="cSuitBig">♠</div><div class="card-rule-emoji" id="cEmoji">🍻</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="rule-card" id="ruleCard">
-          <div class="rule-by" id="ruleBy"></div>
-          <div class="rule-name" id="ruleName">Ready?</div>
-          <div class="rule-desc" id="ruleDesc">Whoever's turn it is — tap the deck to draw the first card!</div>
-          <div class="rule-action" id="ruleAction"></div>
-        </div>
-      </div>
-
-      <div class="history" id="history"></div>
-
-      <div class="house">
-        <button class="house-toggle" id="houseToggle">📜 House rules <span class="pill" id="houseCount">0</span></button>
-        <div class="house-body hidden" id="houseBody"></div>
-      </div>
-
-      <div class="react-bar" id="reactBar"></div>
-    </section>
-
-    <!-- ============ GAME OVER ============ -->
-    <section class="screen" id="screen-over">
-      <div class="panel over">
-        <div class="over-trophy">🏆</div>
-        <h2 class="title" id="overTitle">Game over!</h2>
-        <p class="sub" id="overSub"></p>
-        <div class="over-hero" id="overHero"></div>
-        <div class="stats" id="overStats"></div>
-        <button class="btn btn-gold btn-xl btn-block host-only" id="btnPlayAgain">🔁 Play again</button>
-        <div class="waiting guest-only">Waiting for the host to start a new round<span class="dots"><i>.</i><i>.</i><i>.</i></span></div>
-        <button class="link-btn" id="btnOverLeave">Leave game</button>
-      </div>
-    </section>
-  </main>
-
-  <!-- Menu sheet -->
-  <div class="sheet hidden" id="menuSheet">
-    <div class="sheet-card">
-      <h3>Menu</h3>
-      <button class="btn btn-ghost btn-block" id="mSound">🔊 Sound: on</button>
-      <button class="btn btn-ghost btn-block" id="mShare">🔗 Invite friends</button>
-      <div class="host-only">
-        <button class="btn btn-ghost btn-block" id="mSkip">⏭️ Skip current turn</button>
-        <button class="btn btn-ghost btn-block" id="mGentle">🌸 Gentle mode: on</button>
-        <button class="btn btn-ghost btn-block" id="mRestart">🔁 New deck (restart)</button>
-        <div class="label">Players</div>
-        <div id="mPlayers" class="kick-list"></div>
-      </div>
-      <button class="btn btn-ghost btn-block" id="mRules">📜 How to play</button>
-      <button class="btn btn-danger btn-block" id="mLeave">🚪 Leave game</button>
-      <button class="btn btn-block" id="mClose">Close</button>
-    </div>
+</section>
+<section class="wrap">
+  <h2>Pick your party</h2>
+  <div class="themes"><a class="theme" href="/play?theme=baby-shower"><span class="te">🍼</span><b>Baby Shower</b><span>&quot;Who knows the parents best?&quot; quiz, Mom-or-Dad round, baby predictions and advice cards.</span></a><a class="theme" href="/play?theme=bridal-shower"><span class="te">💍</span><b>Bridal Shower</b><span>How well do you know the bride, who-said-it, sweet advice and story cards.</span></a><a class="theme" href="/play?theme=milestone-birthday"><span class="te">🎂</span><b>Milestone Birthday</b><span>For 30, 40, 50 and 60: stories, toasts and a quiz about the birthday star.</span></a><a class="theme" href="/play?theme=kings-cup"><span class="te">👑</span><b>King's Cup (19+)</b><span>The classic card game, on everyone's phone, with Gentle mode.</span></a></div>
+  <p class="center small">Guides: <a href="/baby-shower-games-on-phones">Baby Shower</a> · <a href="/bridal-shower-games">Bridal Shower</a> · <a href="/40th-birthday-party-games">Milestone Birthday</a> · <a href="/kings-cup-online">King's Cup</a></p>
+</section>
+<section class="wrap how">
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li><b>Set up in minutes.</b> Choose a theme, add the guest of honour's name and pick the quiz or the card deck. Add a few facts and we can write personalised questions for you.</li>
+    <li><b>Guests join from their phones.</b> Show the QR code — everyone picks an avatar and a name. No app, no account.</li>
+    <li><b>Play together.</b> Questions and cards appear on every phone at once, with a 20-second timer, live leaderboard, reactions and a podium.</li>
+    <li><b>Take home a keepsake.</b> Download a print-ready PDF of every guest's advice and wishes for the guest of honour.</li>
+  </ol>
+</section>
+<section class="wrap pricing">
+  <h2>Simple pricing</h2>
+  <div class="plans">
+    <div class="plan-card"><h3>Free</h3><p class="big">$0</p><ul><li>Every theme and game</li><li>Up to 8 players</li><li>Classic quiz questions</li><li>Keepsake PDF (with a small watermark)</li></ul><a class="cta ghost" href="/play?host=1">Start free</a></div>
+    <div class="plan-card best"><h3>Party Pass</h3><p class="big">US$12.99<small> / event</small></p><ul><li>Up to 40 players</li><li>Personalised questions &amp; cards written from your facts (3 generations)</li><li>Keepsake PDF without watermark</li><li>Room valid 7 days</li></ul><a class="cta" href="/play?host=1">Start, upgrade anytime</a></div>
   </div>
-
-  <!-- How to play sheet -->
-  <div class="sheet hidden" id="rulesSheet">
-    <div class="sheet-card">
-      <h3>How to play</h3>
-      <p class="sub">One person hosts and shares the room code. Everyone else joins on their own phone. When it's your turn, tap the deck — the card pops up on every screen.</p>
-      <ul class="rules-list" id="rulesList"></ul>
-      <button class="btn btn-gold btn-block" data-close>Got it!</button>
-    </div>
+  <p class="center small">Bought a code on Etsy? <a href="/redeem">Redeem it here</a>.</p>
+</section>
+<section class="wrap faq"><h2>Questions</h2><details><summary>Do guests need an app or account?</summary><p>No. Guests open a link or scan a QR code, choose an avatar and a name, and play in their browser.</p></details><details><summary>What does it cost?</summary><p>Every theme is free for up to 8 players. A Party Pass (US$12.99, one payment per event) unlocks up to 40 players, personalised questions and a keepsake without watermark, valid for 7 days.</p></details><details><summary>What is the keepsake?</summary><p>Guests leave a piece of advice, a wish or a prediction during the party. The host downloads a print-ready PDF (US Letter or A4) with a cover and one card per guest.</p></details><details><summary>Can people join remotely?</summary><p>Yes — anyone with the room code can play from anywhere. Share the host screen on a video call for hybrid parties.</p></details></section>
+<section class="wrap final"><a class="cta" href="/play?host=1">🎉 Start a free room</a></section>
+</main>
+<footer class="foot">
+  <div class="foot-links">
+    <a href="/baby-shower-games-on-phones">Baby shower games</a><a href="/who-knows-mommy-best">Who knows Mommy best?</a><a href="/bridal-shower-games">Bridal shower games</a><a href="/40th-birthday-party-games">40th birthday games</a><a href="/kings-cup-rules">King's Cup rules</a><a href="/kings-cup-online">King's Cup online</a>
   </div>
-
-  <!-- Connection overlay -->
-  <div class="overlay hidden" id="overlay">
-    <div class="overlay-card">
-      <div class="spinner"></div>
-      <div id="overlayText">Connecting…</div>
-      <button class="btn btn-ghost" id="overlayCancel">Cancel</button>
-    </div>
-  </div>
-
-  <div id="toasts"></div>
-
-  <script async src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script async src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="app.js"></script>
+  <div class="foot-links small"><a href="/redeem">Redeem a code</a><a href="/privacy">Privacy</a><a href="/terms">Terms &amp; refunds</a><a href="mailto:rancorp@gmail.com">Contact</a></div>
+  <p class="small">© 2026 PartyDeck. Play kindly. King's Cup is for adults of legal drinking age only.</p>
+</footer>
+<script>addEventListener('load',function(){setTimeout(function(){import('/js/attribution.js').then(function(m){m.captureAttribution();m.trackPageview();});},0);});</script>
+<script>(function(){var p=new URLSearchParams(location.search);if(p.get("room"))location.replace("/play"+location.search);})();</script>
 </body>
 </html>

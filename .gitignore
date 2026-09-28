@@ -1,0 +1,8 @@
+node_modules/
+tests/node_modules/
+.data/
+private/
+.env
+.env.local
+.vercel
+tests/results/

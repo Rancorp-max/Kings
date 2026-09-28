@@ -1,0 +1,8 @@
+{
+ "id": "kings-cup",
+ "name": "King's Cup",
+ "emoji": "👑",
+ "tagline": "The classic 52-card drinking game. 19+ only. Gentle mode swaps drinks for sips/penalties.",
+ "ageGate": 19,
+ "cards": []
+}

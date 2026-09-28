@@ -1,0 +1,305 @@
+{
+ "id": "bridal-shower",
+ "name": "Bridal Shower",
+ "emoji": "💍",
+ "tagline": "Sweet stories, silly challenges and 'how well do you know the bride' guesses.",
+ "honoree": {
+  "label": "The bride / couple",
+  "placeholders": [
+   "Bride's name",
+   "Partner's name (optional)"
+  ]
+ },
+ "cards": [
+  {
+   "kind": "advice",
+   "text": "Give {names} your best advice for their first year of marriage — keep it kind and keep it short."
+  },
+  {
+   "kind": "advice",
+   "text": "What's the secret to a fair argument? Share yours with {name}."
+  },
+  {
+   "kind": "advice",
+   "text": "Share one tradition from your own relationship or family that {names} should steal."
+  },
+  {
+   "kind": "advice",
+   "text": "What's the best date idea that costs almost nothing? The bride gets to rate it."
+  },
+  {
+   "kind": "advice",
+   "text": "Complete the sentence: \"A happy home always has…\""
+  },
+  {
+   "kind": "advice",
+   "text": "Share the best thing to do on the morning of the wedding to stay calm."
+  },
+  {
+   "kind": "advice",
+   "text": "What's one thing every newlywed should learn to cook together?"
+  },
+  {
+   "kind": "advice",
+   "text": "Give {name} a tip for remembering to enjoy the wedding day instead of rushing it."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess where {names} will go on their first anniversary. Closest answer (per the bride) wins."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the first song {names} will dance to at their first family wedding as a married couple — genre only!"
+  },
+  {
+   "kind": "guess",
+   "text": "Who says \"I love you\" more often: {name} or their partner? The bride confirms."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess {name}'s dream honeymoon activity: beach, hiking, museums, food tour or something wild?"
+  },
+  {
+   "kind": "guess",
+   "text": "Guess who is the better cook in the relationship. The bride delivers the verdict."
+  },
+  {
+   "kind": "guess",
+   "text": "Who's more likely to plan a surprise: {name} or their partner? Everyone votes, then the bride answers."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess what {name} ordered on their first date. Anyone within the right food group gets a point."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the one household chore {name} will happily hand over forever."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess how many months until {names} adopt a pet — or will they never? Bride reveals the truth."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess {name}'s partner's most-used phrase. The bride judges who's closest."
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather have a surprise wedding planned for you or plan a surprise wedding for someone else?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather slow dance to a song you hate or fast dance to a song you love, alone, in front of everyone?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather give a speech with no notes or read someone else's speech without seeing it first?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather honeymoon somewhere freezing or somewhere boiling hot?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather have a tiny wedding with 10 guests or a huge party with everyone you've ever met?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather write your own vows as a rhyming poem or sing them?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather have a wedding cake made of pancakes or a wedding meal made entirely of appetisers?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather always know what your partner is thinking or always know what gift they want?"
+  },
+  {
+   "kind": "story",
+   "text": "Tell the room the moment you knew {name} was going to be a lifelong friend."
+  },
+  {
+   "kind": "story",
+   "text": "Share your favourite memory of {name} from before they met their partner."
+  },
+  {
+   "kind": "story",
+   "text": "When did you first hear about {name}'s partner? What did {name} say?"
+  },
+  {
+   "kind": "story",
+   "text": "Describe {name} in three words, then tell a quick story that proves one of them."
+  },
+  {
+   "kind": "story",
+   "text": "Tell us about the best wedding you've ever been to — without naming whose it was."
+  },
+  {
+   "kind": "story",
+   "text": "What's the funniest thing that ever happened on a trip with {name}?"
+  },
+  {
+   "kind": "story",
+   "text": "Share a time {name} gave you advice that turned out to be right."
+  },
+  {
+   "kind": "story",
+   "text": "What's the most romantic thing you've ever seen someone do? Keep it sweet!"
+  },
+  {
+   "kind": "challenge",
+   "text": "You have 30 seconds to name as many things found at a wedding as you can. Go!"
+  },
+  {
+   "kind": "challenge",
+   "text": "Invent a signature drink for the wedding (name + ingredients) in 20 seconds. Non-alcoholic versions welcome."
+  },
+  {
+   "kind": "challenge",
+   "text": "Recreate {name}'s reaction to the proposal. The bride scores your accuracy out of 10."
+  },
+  {
+   "kind": "challenge",
+   "text": "Give a 20-second best-person speech about the person on your left. Make it heartfelt."
+  },
+  {
+   "kind": "challenge",
+   "text": "Mime a wedding tradition. The first person to guess it picks the next player."
+  },
+  {
+   "kind": "challenge",
+   "text": "Come up with a couple nickname for {names} — combine their names in a new way."
+  },
+  {
+   "kind": "challenge",
+   "text": "Describe your dream first dance without using the words dance, song or music."
+  },
+  {
+   "kind": "challenge",
+   "text": "Name 10 things you'd pack for a honeymoon in 20 seconds."
+  },
+  {
+   "kind": "vote",
+   "text": "On three, point at who will cry first at the wedding."
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the guest most likely to be first on the dance floor."
+  },
+  {
+   "kind": "vote",
+   "text": "Who in the room gives the best advice? Point now — they read the next advice card."
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the person most likely to catch the bouquet (or dodge it)."
+  },
+  {
+   "kind": "vote",
+   "text": "Who would plan the best bachelorette weekend? Point on three."
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the guest most likely to give a surprise speech."
+  },
+  {
+   "kind": "vote",
+   "text": "Who's the best dancer here? Point — they must show us one move."
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the person who knows {name} the longest. Is the room right?"
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a romantic movie genre, setting or cliché. Go round until someone blanks."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name something old, new, borrowed or blue. Pause and you're out!"
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a kitchen gadget every newlywed needs. No repeats."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: say a word that describes {name}. Keep going until someone repeats."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a honeymoon destination, one per person. Last one standing wins."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a wedding tradition from anywhere in the world."
+  },
+  {
+   "kind": "toast",
+   "text": "Raise a glass and finish the sentence: \"To {name}, who always…\""
+  },
+  {
+   "kind": "toast",
+   "text": "Toast the partner who's lucky enough to marry {name}."
+  },
+  {
+   "kind": "toast",
+   "text": "Make a one-line wish for {names}' first home together."
+  },
+  {
+   "kind": "toast",
+   "text": "Toast the friendships in this room that will outlast every trend."
+  },
+  {
+   "kind": "toast",
+   "text": "Give a toast to {name}'s family and the family they're about to gain."
+  },
+  {
+   "kind": "advice",
+   "text": "What's one money habit or planning tip that has saved your sanity? Share it with {names}."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the first big thing {names} will buy together. The bride says who's closest."
+  },
+  {
+   "kind": "story",
+   "text": "If {name}'s love story were a movie, what would the title be? Everyone pitches one."
+  }
+ ],
+ "kinds": {
+  "advice": {
+   "label": "Advice round",
+   "emoji": "💡"
+  },
+  "guess": {
+   "label": "Guess!",
+   "emoji": "🔮"
+  },
+  "wyr": {
+   "label": "Would you rather",
+   "emoji": "⚖️"
+  },
+  "story": {
+   "label": "Story time",
+   "emoji": "📖"
+  },
+  "challenge": {
+   "label": "Challenge",
+   "emoji": "⏱️"
+  },
+  "vote": {
+   "label": "Group vote",
+   "emoji": "👉"
+  },
+  "quickfire": {
+   "label": "Quick-fire",
+   "emoji": "⚡"
+  },
+  "toast": {
+   "label": "Raise a glass",
+   "emoji": "🥂"
+  }
+ }
+}

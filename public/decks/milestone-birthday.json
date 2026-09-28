@@ -1,0 +1,312 @@
+{
+ "id": "milestone-birthday",
+ "name": "Milestone Birthday",
+ "emoji": "🎂",
+ "tagline": "For the big 30, 40, 50 and 60: stories, toasts and guesses about the guest of honour.",
+ "honoree": {
+  "label": "Birthday star",
+  "placeholders": [
+   "Their name",
+   ""
+  ],
+  "age": [
+   30,
+   40,
+   50,
+   60,
+   70
+  ]
+ },
+ "cards": [
+  {
+   "kind": "advice",
+   "text": "You've reached {age}, {name}! Everyone share one lesson they're glad they learned by your age (or wish they had)."
+  },
+  {
+   "kind": "advice",
+   "text": "What's the best birthday tradition you've ever heard of? Should {name} adopt it?"
+  },
+  {
+   "kind": "advice",
+   "text": "Give {name} one piece of advice for the next decade. Make it practical or make it wise."
+  },
+  {
+   "kind": "advice",
+   "text": "What's one thing {name} should try for the first time this year?"
+  },
+  {
+   "kind": "advice",
+   "text": "Share a book, hobby or habit that changed your life and why {name} might love it too."
+  },
+  {
+   "kind": "advice",
+   "text": "What's the best decision you made in your {age}s (or the one you're looking forward to)?"
+  },
+  {
+   "kind": "advice",
+   "text": "Recommend one trip {name} should take before the next milestone birthday."
+  },
+  {
+   "kind": "advice",
+   "text": "What's the best compliment you've ever received? Now give one to {name}."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess {name}'s favourite year of their life so far. {name} reveals the answer."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the first concert {name} ever went to — or the first music they owned. Genre counts!"
+  },
+  {
+   "kind": "guess",
+   "text": "Guess {name}'s dream job at age seven. Closest answer wins."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess what {name} would do with a completely free Saturday. {name} judges."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess {name}'s go-to comfort meal. Everyone answers on three."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess which decade {name} would live in if they could time-travel. {name} explains."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the most spontaneous thing {name} has ever done. {name} reveals the truth."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess {name}'s biggest bucket-list item. Anyone close gets a round of applause."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess {name}'s favourite way to spend a birthday: big party, quiet dinner or adventure?"
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the skill {name} would learn if they had unlimited time."
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather relive your best birthday or get a preview of your next one?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather have a surprise party every year or plan one epic party every decade?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather get a handwritten letter from everyone here or one amazing group gift?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather go back and give your teenage self one tip or ask your 80-year-old self one question?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather spend the next birthday on a mountain or on a beach?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather have a cake that's too big or a playlist that's too long?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather learn a new language or a new instrument this year?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather have your birthday be a national holiday or have a star named after you?"
+  },
+  {
+   "kind": "story",
+   "text": "Tell the room how you met {name}. {name} rates the accuracy out of 10."
+  },
+  {
+   "kind": "story",
+   "text": "Share your favourite memory with {name} from the last ten years."
+  },
+  {
+   "kind": "story",
+   "text": "Tell a story about {name} that shows exactly who they are."
+  },
+  {
+   "kind": "story",
+   "text": "What's the best birthday you've ever had? What made it great?"
+  },
+  {
+   "kind": "story",
+   "text": "Describe {name} in three words, then explain the most surprising one."
+  },
+  {
+   "kind": "story",
+   "text": "What's something {name} taught you, maybe without realising?"
+  },
+  {
+   "kind": "story",
+   "text": "Share a time {name} made you laugh until you couldn't breathe."
+  },
+  {
+   "kind": "story",
+   "text": "If {name}'s life so far were a book, what would chapter one be called?"
+  },
+  {
+   "kind": "challenge",
+   "text": "In 30 seconds, list {age} things you're grateful for. How far do you get?"
+  },
+  {
+   "kind": "challenge",
+   "text": "Sing \"Happy Birthday\" to {name} in the style of an opera singer. The room scores you."
+  },
+  {
+   "kind": "challenge",
+   "text": "Recreate {name}'s signature move, phrase or laugh. {name} judges."
+  },
+  {
+   "kind": "challenge",
+   "text": "Give a 20-second speech about why {name} is great. No pauses allowed!"
+  },
+  {
+   "kind": "challenge",
+   "text": "Mime {name}'s favourite hobby. First to guess picks the next player."
+  },
+  {
+   "kind": "challenge",
+   "text": "Invent a new holiday in {name}'s honour — name it and describe one tradition."
+  },
+  {
+   "kind": "challenge",
+   "text": "Name ten things that were different when {name} was born. 30 seconds!"
+  },
+  {
+   "kind": "challenge",
+   "text": "Give {name} a new superhero name and describe their power in one sentence."
+  },
+  {
+   "kind": "vote",
+   "text": "On three, point at who has known {name} the longest. Are you right?"
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the guest most likely to throw {name}'s next party."
+  },
+  {
+   "kind": "vote",
+   "text": "Who here is most like {name}? Point now!"
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the person who gives the best gifts in this room."
+  },
+  {
+   "kind": "vote",
+   "text": "Who would {name} call first in an emergency? Point — then {name} settles it."
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the guest who'll still be dancing at midnight."
+  },
+  {
+   "kind": "vote",
+   "text": "Who in the room has the best birthday story? Point — they must tell it."
+  },
+  {
+   "kind": "vote",
+   "text": "Point at who's most likely to remember everyone's birthday without a reminder."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name something invented in the year {name} was born or after. Pause and you're out!"
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: say one word that describes {name}. No repeats."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a birthday cake flavour. Last one standing picks the next card."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a place {name} has lived, worked or travelled. Go round until someone blanks."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a party game. Go!"
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name something that gets better with age."
+  },
+  {
+   "kind": "toast",
+   "text": "Raise a glass: finish the sentence \"Here's to {name}, because…\""
+  },
+  {
+   "kind": "toast",
+   "text": "Toast the next {age} years — make one wish for {name}."
+  },
+  {
+   "kind": "toast",
+   "text": "Toast {name}'s family and friends — the people who make every year better."
+  },
+  {
+   "kind": "toast",
+   "text": "Make a toast to {name}'s best decision of the last decade."
+  },
+  {
+   "kind": "toast",
+   "text": "Toast an adventure you want to share with {name} this year."
+  },
+  {
+   "kind": "advice",
+   "text": "What should {name} stop worrying about at {age}? Everyone answers in five words or fewer."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess what {name} wanted to be when they grew up — and whether they secretly still do."
+  },
+  {
+   "kind": "story",
+   "text": "If you could give {name} one memory back to relive, which would you choose?"
+  }
+ ],
+ "kinds": {
+  "advice": {
+   "label": "Advice round",
+   "emoji": "💡"
+  },
+  "guess": {
+   "label": "Guess!",
+   "emoji": "🔮"
+  },
+  "wyr": {
+   "label": "Would you rather",
+   "emoji": "⚖️"
+  },
+  "story": {
+   "label": "Story time",
+   "emoji": "📖"
+  },
+  "challenge": {
+   "label": "Challenge",
+   "emoji": "⏱️"
+  },
+  "vote": {
+   "label": "Group vote",
+   "emoji": "👉"
+  },
+  "quickfire": {
+   "label": "Quick-fire",
+   "emoji": "⚡"
+  },
+  "toast": {
+   "label": "Raise a glass",
+   "emoji": "🥂"
+  }
+ }
+}

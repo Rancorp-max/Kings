@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Test checkout — PartyDeck</title>
+  <link rel="stylesheet" href="site.css" />
+</head>
+<body class="page-narrow">
+  <main class="card-page">
+    <p class="test-banner">🧪 TEST MODE — no card is charged. Stripe keys aren't configured on this deployment, so this page simulates a successful payment.</p>
+    <h1>Party Pass</h1>
+    <p class="price" id="price"></p>
+    <ul id="features"></ul>
+    <button class="cta" id="mockPay">Pay (test mode)</button>
+    <p><a href="/play" id="cancel">Cancel</a></p>
+    <p class="err" id="err"></p>
+  </main>
+  <script type="module">
+    import { SITE } from './js/site-config.js';
+    const p = new URLSearchParams(location.search);
+    const ev = JSON.parse(localStorage.getItem('pd_event') || 'null');
+    document.getElementById('price').textContent = `US$${(SITE.pricing.passPriceCents / 100).toFixed(2)} · one event · ${SITE.pricing.passDays} days`;
+    document.getElementById('features').innerHTML = [`Up to ${SITE.limits.pass.maxPlayers} players`, 'Personalised AI questions & cards', 'Keepsake PDF without watermark'].map((f) => `<li>${f}</li>`).join('');
+    document.getElementById('cancel').href = `/play?event=${encodeURIComponent(p.get('event') || '')}&paid=0`;
+    document.getElementById('mockPay').onclick = async (e) => {
+      e.target.disabled = true;
+      const r = await fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'mock-complete', id: ev?.id, token: ev?.token }) });
+      const d = await r.json();
+      if (!r.ok) { document.getElementById('err').textContent = d.error || 'Failed'; e.target.disabled = false; return; }
+      location.href = `/play?event=${encodeURIComponent(ev.id)}&paid=1`;
+    };
+  </script>
+</body>
+</html>

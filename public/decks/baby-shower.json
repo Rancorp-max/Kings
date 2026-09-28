@@ -1,0 +1,305 @@
+{
+ "id": "baby-shower",
+ "name": "Baby Shower",
+ "emoji": "🍼",
+ "tagline": "Advice, guesses and \"parent edition\" would-you-rathers for the parents-to-be.",
+ "honoree": {
+  "label": "Parents-to-be",
+  "placeholders": [
+   "Parent's name",
+   "Partner's name (optional)"
+  ]
+ },
+ "cards": [
+  {
+   "kind": "advice",
+   "text": "Share the one piece of advice you'd give {names} for the very first night home."
+  },
+  {
+   "kind": "advice",
+   "text": "What's the best thing someone ever did for you (or a friend) after a new baby arrived? Tell {names}."
+  },
+  {
+   "kind": "advice",
+   "text": "Give {names} a tip for getting out of the house on time with a little one. Bonus points if it's genuinely useful."
+  },
+  {
+   "kind": "advice",
+   "text": "What's one thing {names} should NOT bother buying? Everyone else: nod if you agree."
+  },
+  {
+   "kind": "advice",
+   "text": "Share a lullaby, rhyme or bedtime ritual from your own family that {names} could borrow."
+  },
+  {
+   "kind": "advice",
+   "text": "In ten words or fewer: your best advice for staying a team when you're both tired."
+  },
+  {
+   "kind": "advice",
+   "text": "What's the most useful thing you learned from a grandparent? Pass it on to {names}."
+  },
+  {
+   "kind": "advice",
+   "text": "Recommend one small daily ritual {names} should start with the baby from day one."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the baby's first word. Everyone answers at once on three — most popular answer wins!"
+  },
+  {
+   "kind": "guess",
+   "text": "Whose laugh will the baby have — {name}'s or someone else's in the family? Make your case."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the baby's future favourite food. The most creative answer gets a round of applause."
+  },
+  {
+   "kind": "guess",
+   "text": "Predict the baby's first big talent: singing, dancing, drawing, building, or making everyone laugh?"
+  },
+  {
+   "kind": "guess",
+   "text": "Guess which family member the baby will have wrapped around their little finger first."
+  },
+  {
+   "kind": "guess",
+   "text": "Will the baby be an early bird or a night owl? Everyone votes with a thumbs up (early) or down (night)."
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the first place {names} will take the baby on a proper outing."
+  },
+  {
+   "kind": "guess",
+   "text": "Predict the baby's first hobby at age ten. Go around the room — no repeats allowed!"
+  },
+  {
+   "kind": "guess",
+   "text": "Guess which nursery rhyme will become the baby's absolute favourite."
+  },
+  {
+   "kind": "guess",
+   "text": "Which will come first: first tooth, first crawl, or first real giggle? Everyone picks one."
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather change a diaper blindfolded or sing every instruction out loud for a whole day?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather have a baby who sleeps all night but wakes at 5am, or one who sleeps until 8 but wakes twice?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather assemble a crib with no instructions or a stroller with instructions in a language you don't speak?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather have a toddler who only speaks in questions or one who only speaks in song?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather name the baby's first pet or pick the baby's first Halloween costume?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather read the same picture book 40 times in a row or sing the same song 40 times in a row?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather have a baby who laughs at everything or a baby who dances to everything?"
+  },
+  {
+   "kind": "wyr",
+   "text": "Would you rather be the fun aunt/uncle who visits once a month or the reliable one who babysits every Tuesday?"
+  },
+  {
+   "kind": "story",
+   "text": "Tell the room about the first time you ever held a newborn. Be honest about the nerves!"
+  },
+  {
+   "kind": "story",
+   "text": "Share your favourite story about {name} that the baby should hear one day."
+  },
+  {
+   "kind": "story",
+   "text": "What's a funny thing you did as a toddler that your family still talks about?"
+  },
+  {
+   "kind": "story",
+   "text": "Describe {names} in three words. Then explain the least obvious one."
+  },
+  {
+   "kind": "story",
+   "text": "Tell the story of how you first met {name}. Everyone else gets one follow-up question."
+  },
+  {
+   "kind": "story",
+   "text": "What's a family tradition you hope this baby grows up with? Tell us where it came from."
+  },
+  {
+   "kind": "story",
+   "text": "Share a moment you saw {name} being caring before they were a parent-to-be."
+  },
+  {
+   "kind": "story",
+   "text": "What was your favourite toy as a child, and what happened to it?"
+  },
+  {
+   "kind": "challenge",
+   "text": "You have 30 seconds to list as many baby animal names as you can (kitten, calf…). Go!"
+  },
+  {
+   "kind": "challenge",
+   "text": "Invent a brand-new lullaby line on the spot and sing it. The room scores it out of 10."
+  },
+  {
+   "kind": "challenge",
+   "text": "Mime a new parent's morning routine. First person to guess the step you're on takes the next card."
+  },
+  {
+   "kind": "challenge",
+   "text": "Name five things in this room that would need baby-proofing. Clock's ticking — 20 seconds!"
+  },
+  {
+   "kind": "challenge",
+   "text": "Explain how to swaddle a baby using only your hands — no words. Someone narrates for you."
+  },
+  {
+   "kind": "challenge",
+   "text": "Come up with a silly middle name suggestion for the baby that rhymes with the day of the week."
+  },
+  {
+   "kind": "challenge",
+   "text": "In 20 seconds, name as many children's books as you can remember — titles or just the plot."
+  },
+  {
+   "kind": "challenge",
+   "text": "Do your best impression of a baby tasting a lemon for the first time. The room votes on accuracy."
+  },
+  {
+   "kind": "vote",
+   "text": "On three, point at the guest most likely to become the baby's favourite babysitter."
+  },
+  {
+   "kind": "vote",
+   "text": "Point at who will send the most baby photos to the group chat. Most pointed-at reads the next card."
+  },
+  {
+   "kind": "vote",
+   "text": "Who in the room would win a diaper-changing speed race? Point on three!"
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the person most likely to spoil the baby with too many toys."
+  },
+  {
+   "kind": "vote",
+   "text": "Who here will teach the baby their first silly dance? Point now!"
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the guest who'll be the calmest in a baby emergency. They get to pick the next player."
+  },
+  {
+   "kind": "vote",
+   "text": "Who's most likely to cry happy tears when they first meet the baby? Point on three."
+  },
+  {
+   "kind": "vote",
+   "text": "Point at the person who'll invent the baby's first nickname."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a baby animal for every letter of the alphabet, going around the room. Stumble and you're out!"
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: go around the room naming things you pack in a diaper bag. First repeat or pause is out."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a lullaby, nursery rhyme or kids' song. No repeats — last one standing wins."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: say a word to describe {names} as parents. Keep going until someone blanks."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a first — first steps, first word, first haircut… Go round until nobody can think of one."
+  },
+  {
+   "kind": "quickfire",
+   "text": "Quick-fire: name a sound a baby makes. Performance encouraged."
+  },
+  {
+   "kind": "toast",
+   "text": "Raise your glass (any drink!) and make a one-sentence wish for the baby's first year."
+  },
+  {
+   "kind": "toast",
+   "text": "Toast {names}: finish the sentence \"This baby is lucky because…\""
+  },
+  {
+   "kind": "toast",
+   "text": "Make a toast to the grandparents-to-be and the village that's about to help."
+  },
+  {
+   "kind": "toast",
+   "text": "Give a toast to {name}'s patience, future sleep, and sense of humour. In that order."
+  },
+  {
+   "kind": "toast",
+   "text": "Toast the baby's future best friend, whoever they turn out to be."
+  },
+  {
+   "kind": "advice",
+   "text": "Whisper-free round: what's the kindest thing a stranger ever said to you about parenting (or being a kid)?"
+  },
+  {
+   "kind": "guess",
+   "text": "Guess the baby's future bedtime-story request: dragons, dinosaurs, space, or the sea? Everyone picks."
+  },
+  {
+   "kind": "story",
+   "text": "If the baby could have one superpower from someone in this room, whose would it be and why?"
+  }
+ ],
+ "kinds": {
+  "advice": {
+   "label": "Advice round",
+   "emoji": "💡"
+  },
+  "guess": {
+   "label": "Guess!",
+   "emoji": "🔮"
+  },
+  "wyr": {
+   "label": "Would you rather",
+   "emoji": "⚖️"
+  },
+  "story": {
+   "label": "Story time",
+   "emoji": "📖"
+  },
+  "challenge": {
+   "label": "Challenge",
+   "emoji": "⏱️"
+  },
+  "vote": {
+   "label": "Group vote",
+   "emoji": "👉"
+  },
+  "quickfire": {
+   "label": "Quick-fire",
+   "emoji": "⚡"
+  },
+  "toast": {
+   "label": "Raise a glass",
+   "emoji": "🥂"
+  }
+ }
+}

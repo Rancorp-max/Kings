@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <title>Play — PartyDeck</title>
+  <meta name="description" content="Host a party game room. Guests join from their phones with a 4-letter code — card decks, quizzes and a keepsake for the guest of honour." />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#1a0b3d" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/favicon-48.png" sizes="48x48" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="party.css" />
+</head>
+<body data-theme="baby-shower">
+  <div class="bg" aria-hidden="true">
+    <div class="bg-glow g1"></div><div class="bg-glow g2"></div><div class="bg-glow g3"></div>
+    <div class="bg-suits" id="bgSuits"></div>
+  </div>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+  <div id="reactions" aria-hidden="true"></div>
+
+  <main id="app">
+    <!-- ============ HOME ============ -->
+    <section class="screen" id="screen-home">
+      <div class="home-wrap">
+        <a class="brand-link" href="/" data-brand>🎉 PartyDeck</a>
+        <div class="fan" aria-hidden="true">
+          <div class="fan-card c1"><span>🍼</span></div>
+          <div class="fan-card c2"><span>💍</span></div>
+          <div class="fan-card c3"><span>🎂</span></div>
+          <div class="fan-card c4"><span>👑</span></div>
+        </div>
+        <h1 class="logo small">LET'S<br><span class="logo-cup">PARTY</span></h1>
+        <p class="tagline" data-tagline>One host, everyone plays on their phones.</p>
+        <div class="home-actions">
+          <button class="btn btn-gold btn-xl" id="btnHost">🎉 Host a party</button>
+          <div class="or"><span>or join a room</span></div>
+          <form class="join-row" id="joinForm" autocomplete="off">
+            <input id="joinCode" class="input code-input" maxlength="5" placeholder="CODE" inputmode="text" autocapitalize="characters" spellcheck="false" aria-label="Room code" />
+            <button class="btn btn-pink" type="submit">Join ➜</button>
+          </form>
+        </div>
+        <a class="link-btn" href="/redeem">🎟️ Have an access code?</a>
+      </div>
+    </section>
+
+    <!-- ============ PROFILE ============ -->
+    <section class="screen" id="screen-profile">
+      <div class="panel profile">
+        <button class="back-btn" data-go="home" aria-label="Back">←</button>
+        <h2 class="title" id="profileTitle">Who are you?</h2>
+        <p class="sub" id="profileSub">Pick your avatar and name</p>
+        <div class="avatar-preview-wrap">
+          <div class="avatar avatar-xl" id="avatarPreview"></div>
+          <button class="shuffle-btn" id="btnShuffleAvatar" title="Random avatar" aria-label="Random avatar">🎲</button>
+        </div>
+        <input id="nameInput" class="input name-input" maxlength="16" placeholder="Your name" autocomplete="nickname" aria-label="Your name" />
+        <div class="label">Avatar</div>
+        <div class="emoji-grid" id="emojiGrid"></div>
+        <div class="label">Colour</div>
+        <div class="color-row" id="colorRow"></div>
+        <button class="btn btn-gold btn-xl btn-block" id="btnProfileGo">Let's go! 🚀</button>
+        <p class="error" id="profileError"></p>
+      </div>
+    </section>
+
+    <!-- ============ SETUP (host) ============ -->
+    <section class="screen" id="screen-setup">
+      <div class="panel setup">
+        <button class="back-btn" data-go="home" aria-label="Back">←</button>
+        <h2 class="title">Set up your party</h2>
+
+        <div class="label">1 · Pick a theme</div>
+        <div class="theme-grid" id="themeGrid"></div>
+
+        <div id="modeBox">
+          <div class="label">2 · Pick a game</div>
+          <div class="seg" id="modeSeg">
+            <button type="button" data-mode="deck">🃏 Card deck</button>
+            <button type="button" data-mode="quiz">🏆 Quiz</button>
+          </div>
+          <p class="hint" id="modeHint"></p>
+        </div>
+
+        <div id="honoreeBox">
+          <div class="label" id="honoreeLabel">3 · Guest(s) of honour</div>
+          <div class="row2">
+            <input class="input" id="honoree1" maxlength="30" placeholder="Name" />
+            <input class="input" id="honoree2" maxlength="30" placeholder="Partner (optional)" />
+          </div>
+          <div class="row2" id="ageRow">
+            <label class="mini-label">Turning
+              <select class="input" id="honoreeAge"><option>30</option><option>40</option><option>50</option><option>60</option><option>70</option></select>
+            </label>
+          </div>
+        </div>
+
+        <!-- Quiz builder -->
+        <div id="quizBuilder" class="builder">
+          <div class="label">4 · Questions <span class="pill" id="qCount">0</span></div>
+          <div class="ai-box">
+            <div class="ai-head"><b>✨ Personalise with AI</b> <span class="pill ghost" id="genLeft"></span></div>
+            <p class="hint">Add up to 12 facts or inside jokes and we'll write the questions (you can edit every one before the game).</p>
+            <div id="factList" class="fact-list"></div>
+            <button type="button" class="btn btn-pink btn-block" id="btnGenerate">✨ Write my questions</button>
+            <p class="error" id="genError"></p>
+          </div>
+          <div id="questionList" class="q-list"></div>
+          <button type="button" class="btn btn-ghost btn-block" id="btnAddQuestion">➕ Add your own question</button>
+
+          <div class="toggle-row">
+            <label class="switch"><input type="checkbox" id="whoToggle" /><span class="slider"></span><span id="whoLabel">"Who said it?" round</span></label>
+          </div>
+          <div id="whoBox" class="who-box hidden">
+            <div class="row2">
+              <input class="input" id="whoA" maxlength="20" placeholder="Mom" />
+              <input class="input" id="whoB" maxlength="20" placeholder="Dad" />
+            </div>
+            <p class="hint">Tap who said it (or who's more likely). Unanswered lines are skipped.</p>
+            <div id="whoList" class="who-list"></div>
+            <div class="row2"><input class="input" id="whoNew" maxlength="140" placeholder="Add a quote or &quot;who's more likely to…&quot;" /><button type="button" class="btn btn-ghost" id="whoAdd">Add</button></div>
+          </div>
+          <div class="toggle-row" id="predictRow">
+            <label class="switch"><input type="checkbox" id="predictToggle" checked /><span class="slider"></span><span>Baby predictions round <small>(date, weight, hair…)</small></span></label>
+          </div>
+        </div>
+
+        <!-- Deck personalisation -->
+        <div id="deckBuilder" class="builder">
+          <div class="ai-box">
+            <div class="ai-head"><b>✨ Add 20 personalised cards</b> <span class="pill ghost" id="genLeft2"></span></div>
+            <p class="hint">Add facts about the guest(s) of honour and we'll mix custom cards into the deck.</p>
+            <div id="factList2" class="fact-list"></div>
+            <button type="button" class="btn btn-pink btn-block" id="btnGenerate2">✨ Write my cards</button>
+            <p class="error" id="genError2"></p>
+            <div id="aiCardList" class="card-list"></div>
+          </div>
+        </div>
+
+        <!-- Plan / upgrade -->
+        <div class="plan-box" id="planBox"></div>
+
+        <button class="btn btn-gold btn-xl btn-block" id="btnOpenRoom">🎉 Open the room</button>
+        <p class="error" id="setupError"></p>
+      </div>
+    </section>
+
+    <!-- ============ LOBBY ============ -->
+    <section class="screen" id="screen-lobby">
+      <div class="panel lobby">
+        <button class="back-btn" id="btnLeaveLobby" aria-label="Leave">←</button>
+        <div class="theme-chip" id="lobbyTheme"></div>
+        <div class="label center">Room code</div>
+        <div class="room-code" id="lobbyCode">-----</div>
+        <div class="share-row">
+          <button class="btn btn-ghost" id="btnShare">🔗 Share invite</button>
+          <button class="btn btn-ghost" id="btnQR">📱 QR code</button>
+        </div>
+        <div class="qr-box hidden" id="qrBox"><div id="qr"></div><small>Scan to join</small></div>
+        <div class="lobby-head">
+          <h3>Players <span class="pill" id="lobbyCount">0</span> <small class="cap" id="lobbyCap"></small></h3>
+        </div>
+        <div class="player-grid" id="lobbyPlayers"></div>
+        <button class="btn btn-ghost btn-block keepsake-btn" data-keepsake>💌 Leave a note for the keepsake</button>
+        <div class="host-only settings" id="gentleRow">
+          <label class="switch">
+            <input type="checkbox" id="gentleToggle" checked />
+            <span class="slider"></span>
+            <span>Gentle mode <small>(say "sip / penalty" instead of "drink")</small></span>
+          </label>
+        </div>
+        <button class="btn btn-gold btn-xl btn-block host-only" id="btnStart">Start</button>
+        <button class="btn btn-ghost btn-block host-only hidden upgrade-btn" id="btnLobbyUpgrade">⭐ Upgrade</button>
+        <div class="waiting guest-only">Waiting for the host to start<span class="dots"><i>.</i><i>.</i><i>.</i></span></div>
+      </div>
+    </section>
+
+    <!-- ============ GAME (card deck) ============ -->
+    <section class="screen" id="screen-game">
+      <header class="topbar">
+        <div class="chip" id="gameCode" title="Room code">#-----</div>
+        <div class="cup-meter kings-only" title="Kings drawn">
+          <div class="cup"><div class="cup-fill" id="cupFill"></div><span class="cup-emoji">🏆</span></div>
+          <div class="cup-text"><b id="kingsCount">0</b>/4 Kings</div>
+        </div>
+        <div class="chip theme-only" id="gameTheme"></div>
+        <div class="chip" title="Cards left">🂠 <b id="deckLeft">52</b></div>
+        <button class="icon-btn" data-menu aria-label="Menu">☰</button>
+      </header>
+      <div class="rail" id="playerRail"></div>
+      <div class="turn-banner" id="turnBanner"></div>
+      <div class="table">
+        <div class="deck-zone">
+          <button class="deck" id="deck" aria-label="Draw a card" disabled>
+            <div class="deck-stack"><div class="card-back"></div><div class="card-back"></div><div class="card-back"></div></div>
+            <div class="deck-label" id="deckLabel">TAP TO DRAW</div>
+          </button>
+          <div class="card-3d" id="cardWrap">
+            <div class="card-inner" id="cardInner">
+              <div class="card-face card-front-face"><div class="card-back big"></div></div>
+              <div class="card-face card-rank-face" id="cardFace">
+                <div class="corner tl"><b id="cRank1">A</b><i id="cSuit1">♠</i></div>
+                <div class="corner br"><b id="cRank2">A</b><i id="cSuit2">♠</i></div>
+                <div class="card-center"><div class="card-big-suit" id="cSuitBig">♠</div><div class="card-rule-emoji" id="cEmoji">🍻</div></div>
+                <div class="theme-card"><div class="tc-emoji" id="tcEmoji">💡</div><div class="tc-kind" id="tcKind">Advice</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="rule-card" id="ruleCard">
+          <div class="rule-by" id="ruleBy"></div>
+          <div class="rule-name" id="ruleName">Ready?</div>
+          <div class="rule-desc" id="ruleDesc">Whoever's turn it is — tap the deck to draw the first card!</div>
+          <div class="rule-action" id="ruleAction"></div>
+        </div>
+      </div>
+      <div class="history" id="history"></div>
+      <div class="house kings-only">
+        <button class="house-toggle" id="houseToggle">📜 House rules <span class="pill" id="houseCount">0</span></button>
+        <div class="house-body hidden" id="houseBody"></div>
+      </div>
+      <button class="btn btn-ghost btn-block keepsake-btn theme-only" data-keepsake>💌 Leave a note for the keepsake</button>
+      <div class="react-bar" id="reactBar"></div>
+    </section>
+
+    <!-- ============ QUIZ ============ -->
+    <section class="screen" id="screen-quiz">
+      <header class="topbar">
+        <div class="chip" id="quizCode">#-----</div>
+        <div class="chip" id="quizProgress">Q 1/12</div>
+        <div class="chip" id="quizMyScore">⭐ 0</div>
+        <button class="icon-btn" data-menu aria-label="Menu">☰</button>
+      </header>
+      <div class="timer"><div class="timer-bar" id="timerBar"></div><span id="timerText"></span></div>
+      <div id="quizStage" class="quiz-stage"></div>
+      <div id="quizHostControls" class="host-only quiz-controls"></div>
+      <button class="btn btn-ghost btn-block keepsake-btn guest-only" data-keepsake>💌 Leave a note for the keepsake</button>
+      <div class="react-bar" id="reactBar2"></div>
+    </section>
+
+    <!-- ============ GAME OVER ============ -->
+    <section class="screen" id="screen-over">
+      <div class="panel over">
+        <div class="over-trophy" id="overTrophy">🏆</div>
+        <h2 class="title" id="overTitle">Game over!</h2>
+        <p class="sub" id="overSub"></p>
+        <div class="podium" id="podium"></div>
+        <div class="over-hero" id="overHero"></div>
+        <div class="stats" id="overStats"></div>
+        <div class="keepsake-panel host-only" id="keepsakePanel">
+          <div class="label">💌 Keepsake <span class="pill" id="keepsakeCount">0</span></div>
+          <p class="hint" id="keepsakeHint"></p>
+          <div class="seg small" id="paperSeg"><button type="button" data-paper="letter" class="sel">US Letter</button><button type="button" data-paper="a4">A4</button></div>
+          <button class="btn btn-pink btn-block" id="btnKeepsake">⬇️ Download keepsake PDF</button>
+          <button class="btn btn-ghost btn-block hidden" id="btnOverUpgrade">✨ Remove the watermark with a Party Pass</button>
+        </div>
+        <div class="predict-panel host-only" id="predictPanel"></div>
+        <button class="btn btn-gold btn-xl btn-block host-only" id="btnPlayAgain">🔁 Play again</button>
+        <button class="btn btn-ghost btn-block host-only" id="btnBackToLobby">🛋️ Back to lobby</button>
+        <div class="waiting guest-only">Waiting for the host<span class="dots"><i>.</i><i>.</i><i>.</i></span></div>
+        <a class="referral" id="referralLink" href="/">🎉 Loved it? <b>Host your own party</b> — free →</a>
+        <button class="link-btn" id="btnOverLeave">Leave game</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Menu -->
+  <div class="sheet hidden" id="menuSheet">
+    <div class="sheet-card">
+      <h3>Menu</h3>
+      <button class="btn btn-ghost btn-block" id="mSound">🔊 Sound: on</button>
+      <button class="btn btn-ghost btn-block" id="mShare">🔗 Invite friends</button>
+      <div class="host-only">
+        <button class="btn btn-ghost btn-block deck-only" id="mSkip">⏭️ Skip current turn</button>
+        <button class="btn btn-ghost btn-block kings-only" id="mGentle">🌸 Gentle mode: on</button>
+        <button class="btn btn-ghost btn-block" id="mRestart">🔁 Restart game</button>
+        <button class="btn btn-ghost btn-block" id="mEnd">🏁 End game now</button>
+        <div class="label">Players</div>
+        <div id="mPlayers" class="kick-list"></div>
+      </div>
+      <button class="btn btn-ghost btn-block" id="mRules">📜 How to play</button>
+      <button class="btn btn-danger btn-block" id="mLeave">🚪 Leave game</button>
+      <button class="btn btn-block" id="mClose">Close</button>
+    </div>
+  </div>
+
+  <!-- How to play -->
+  <div class="sheet hidden" id="rulesSheet">
+    <div class="sheet-card">
+      <h3>How to play</h3>
+      <p class="sub" id="rulesIntro"></p>
+      <ul class="rules-list" id="rulesList"></ul>
+      <button class="btn btn-gold btn-block" data-close>Got it!</button>
+    </div>
+  </div>
+
+  <!-- Keepsake note -->
+  <div class="sheet hidden" id="keepsakeSheet">
+    <form class="sheet-card" id="keepsakeForm">
+      <h3>💌 A note for <span id="ksNames">them</span></h3>
+      <p class="sub">It goes into a printable keepsake the host gives to the guest(s) of honour. One note per guest — you can edit it until the game ends.</p>
+      <div class="seg" id="ksKind">
+        <button type="button" data-kind="advice" class="sel">💡 Advice</button>
+        <button type="button" data-kind="wish">🌟 Wish</button>
+        <button type="button" data-kind="prediction">🔮 Prediction</button>
+      </div>
+      <textarea class="input" id="ksText" maxlength="300" rows="5" placeholder="Write something kind…"></textarea>
+      <div class="hint right"><span id="ksChars">0</span>/300</div>
+      <button class="btn btn-gold btn-block" type="submit">Save my note</button>
+      <button class="btn btn-block" type="button" data-close>Cancel</button>
+    </form>
+  </div>
+
+  <!-- Age gate -->
+  <div class="sheet hidden" id="ageSheet">
+    <div class="sheet-card">
+      <h3>👑 19+ only</h3>
+      <p class="sub">King's Cup is a drinking game. Please confirm you're 19 or older (or of legal drinking age where you live). Gentle mode swaps drinks for sips/penalties — play responsibly and never drink and drive.</p>
+      <button class="btn btn-gold btn-block" id="ageYes">I'm 19 or older</button>
+      <button class="btn btn-block" id="ageNo">I'm not — take me back</button>
+    </div>
+  </div>
+
+  <!-- Connection overlay -->
+  <div class="overlay hidden" id="overlay">
+    <div class="overlay-card">
+      <div class="spinner"></div>
+      <div id="overlayText">Connecting…</div>
+      <button class="btn btn-ghost" id="overlayCancel">Cancel</button>
+    </div>
+  </div>
+
+  <div id="toasts" role="status" aria-live="polite"></div>
+
+  <script async src="vendor/peerjs-1.5.4.min.js"></script>
+  <script async src="vendor/qrcode-1.0.0.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

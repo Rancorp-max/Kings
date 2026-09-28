@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /results
+Disallow: /mock-checkout
+
+Sitemap: https://kings-gamma.vercel.app/sitemap.xml

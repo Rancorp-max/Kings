@@ -1,0 +1,53 @@
+// GENERATED from site.config.json by scripts/build-pages.js — edit that file, not this one.
+export const SITE = {
+  "brand": {
+    "name": "PartyDeck",
+    "tagline": "One host, everyone plays on their phones.",
+    "emoji": "🎉",
+    "siteUrl": "https://kings-gamma.vercel.app",
+    "supportEmail": "rancorp@gmail.com",
+    "ownerName": "PartyDeck",
+    "country": "Canada"
+  },
+  "pricing": {
+    "currency": "usd",
+    "passPriceCents": 1299,
+    "passLabel": "Party Pass",
+    "passDays": 7,
+    "etsyCodeRevenueCents": 1299
+  },
+  "limits": {
+    "free": {
+      "maxPlayers": 8,
+      "generations": 1,
+      "aiQuestionsPlayable": 5,
+      "aiCardsPlayable": 5,
+      "watermark": true
+    },
+    "pass": {
+      "maxPlayers": 40,
+      "generations": 3,
+      "aiQuestionsPlayable": 99,
+      "aiCardsPlayable": 99,
+      "watermark": false
+    }
+  },
+  "ai": {
+    "model": "claude-sonnet-5",
+    "moderationModel": "claude-haiku-4-5",
+    "priceUsdPerMTok": {
+      "claude-sonnet-5": {
+        "input": 2,
+        "output": 10
+      },
+      "claude-haiku-4-5": {
+        "input": 1,
+        "output": 5
+      }
+    }
+  },
+  "ageGate": {
+    "kingsCupMinAge": 19
+  },
+  "launchDate": null
+};
