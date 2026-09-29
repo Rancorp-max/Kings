@@ -1,74 +1,110 @@
 {
- "id": "reception",
- "name": "Reception",
- "emoji": "🥂",
- "description": "The shoe game with guest voting, a toast wall on the big screen, and the final side-vs-side scoreboard reveal.",
- "rounds": [
-  "The shoe game (guests vote, the couple reveals)",
-  "Toast wall",
-  "Final scoreboard reveal"
- ],
- "defaults": [
-  {
-   "kind": "shoe",
-   "text": "Who is the better cook?"
-  },
-  {
-   "kind": "shoe",
-   "text": "Who takes longer to get ready?"
-  },
-  {
-   "kind": "shoe",
-   "text": "Who said \"I love you\" first?"
-  },
-  {
-   "kind": "shoe",
-   "text": "Who is more likely to get lost?"
-  },
-  {
-   "kind": "shoe",
-   "text": "Who is the bigger romantic?"
-  },
-  {
-   "kind": "shoe",
-   "text": "Who will do the dishes?"
-  },
-  {
-   "kind": "shoe",
-   "text": "Who is the better dancer?"
-  },
-  {
-   "kind": "shoe",
-   "text": "Who apologises first?"
-  },
-  {
-   "kind": "prompt",
-   "noteKind": "toast",
-   "text": "Raise a glass! Write a short toast for {couple} — the best ones go on the big screen."
-  }
- ],
- "bank": [
-  {
-   "kind": "mc",
-   "text": "How many guests are at the reception tonight?",
-   "options": [
-    "Under 100",
-    "100–200",
-    "200–300",
-    "More than 300"
-   ],
-   "correct": null
-  },
-  {
-   "kind": "mc",
-   "text": "What is the couple's first dance song style?",
-   "options": [
-    "Romantic ballad",
-    "Bollywood",
-    "Pop",
-    "A surprise mashup"
-   ],
-   "correct": null
-  }
- ]
+  "id": "reception",
+  "name": "Reception",
+  "emoji": "🥂",
+  "description": "The shoe game with guest voting, a toast wall on the big screen, and the final side-vs-side scoreboard reveal. Plus party games: Quip Clash, Doodle Duel, Crowd Pulse and Fib Finder.",
+  "rounds": [
+    "The shoe game (guests vote, the couple reveals)",
+    "Toast wall",
+    "Final scoreboard reveal"
+  ],
+  "defaults": [
+    {
+      "kind": "shoe",
+      "text": "Who is the better cook?"
+    },
+    {
+      "kind": "shoe",
+      "text": "Who takes longer to get ready?"
+    },
+    {
+      "kind": "shoe",
+      "text": "Who said \"I love you\" first?"
+    },
+    {
+      "kind": "shoe",
+      "text": "Who is more likely to get lost?"
+    },
+    {
+      "kind": "shoe",
+      "text": "Who is the bigger romantic?"
+    },
+    {
+      "kind": "shoe",
+      "text": "Who will do the dishes?"
+    },
+    {
+      "kind": "shoe",
+      "text": "Who is the better dancer?"
+    },
+    {
+      "kind": "shoe",
+      "text": "Who apologises first?"
+    },
+    {
+      "kind": "prompt",
+      "noteKind": "toast",
+      "text": "Raise a glass! Write a short toast for {couple} — the best ones go on the big screen."
+    },
+    {
+      "kind": "quip",
+      "text": "The secret to a happy marriage is ___"
+    },
+    {
+      "kind": "doodle",
+      "text": "Design {couple}'s dream wedding cake"
+    },
+    {
+      "kind": "pulse",
+      "text": "Have you ever given a speech at a wedding?"
+    },
+    {
+      "kind": "quip",
+      "text": "Rule #1 of the {a} & {b} household: ___"
+    }
+  ],
+  "bank": [
+    {
+      "kind": "mc",
+      "text": "How many guests are at the reception tonight?",
+      "options": [
+        "Under 100",
+        "100–200",
+        "200–300",
+        "More than 300"
+      ],
+      "correct": null
+    },
+    {
+      "kind": "mc",
+      "text": "What is the couple's first dance song style?",
+      "options": [
+        "Romantic ballad",
+        "Bollywood",
+        "Pop",
+        "A surprise mashup"
+      ],
+      "correct": null
+    },
+    {
+      "kind": "fib",
+      "text": "{a} and {b}'s first holiday together was to ___"
+    },
+    {
+      "kind": "fib",
+      "text": "The first gift {b} ever gave {a} was ___"
+    },
+    {
+      "kind": "pulse",
+      "text": "Will you still be dancing at midnight?"
+    },
+    {
+      "kind": "doodle",
+      "text": "Draw the couple 50 years from now"
+    },
+    {
+      "kind": "quip",
+      "text": "The couple's first argument as newlyweds will be about ___"
+    }
+  ]
 }

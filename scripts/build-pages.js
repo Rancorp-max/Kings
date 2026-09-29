@@ -197,6 +197,16 @@ function weddingsPage() {
   <div class="themes">${packs.map(([e, n, t, l]) => `<a class="theme" href="${l}"><span class="te">${e}</span><b>${esc(n)}</b><span>${esc(t)}</span></a>`).join('')}</div>
   <p class="center small">Every pack can be personalised from a few facts about the couple — you approve each question before it goes live.</p>
 </section>
+<section class="wrap">
+  <h2>Party games, big-screen style</h2>
+  <div class="themes">${[
+    ['⚔️', 'Quip Clash', 'Everyone writes a punchline on their phone; the best go head to head on the big screen and the room votes. Bride side vs groom side, with a clean-sweep stamp for a 100% win.'],
+    ['🕵️', 'Fib Finder', 'A true fact about the couple with a blank. Guests write believable lies, then hunt for the truth among them. Fool your friends to score.'],
+    ['🎨', 'Doodle Duel', 'Draw on your phone. The best drawings replay stroke by stroke on the projector and the room crowns a winner.'],
+    ['📊', 'Crowd Pulse', 'Answer a yes/no question and guess how the whole room answered. Watch the needle swing and the closest guesses score.'],
+  ].map(([e, n, t]) => `<div class="theme"><span class="te">${e}</span><b>${esc(n)}</b><span>${esc(t)}</span></div>`).join('')}</div>
+  <p class="center small">Every event pack includes them. Only the answers picked for the big screen are shown, after an automatic safety check or a host's approval.</p>
+</section>
 <section class="wrap how">
   <h2>How it works</h2>
   <ol class="steps">
@@ -257,7 +267,7 @@ const privacy = () => simplePage({
   body: `<main class="article"><h1>Privacy policy</h1><p class="small">Last updated ${today}. Draft — please review before relying on it.</p>
 <h2>What we collect</h2><ul>
 <li><strong>Party rooms: game data stays on devices.</strong> In party rooms (showers, birthdays, King's Cup), names, avatars, answers and keepsake notes travel directly between the host's and guests' browsers (peer-to-peer) and are stored only in the host's browser. We do not store those notes on our servers.</li>
-<li><strong>Weddings are stored on our servers.</strong> Because wedding games run for hundreds of guests over several days, we store the wedding's details (couple names, event dates, sides), each guest's display name, side, avatar and answers, and the messages guests send, so they can be moderated, shown on the big screen and printed in the keepsake book. Guest messages and AI-generated questions are checked automatically (using Anthropic's API) before a host approves them. The wedding owner can ask us to delete a wedding and all its guest data at any time.</li>
+<li><strong>Weddings are stored on our servers.</strong> Because wedding games run for hundreds of guests over several days, we store the wedding's details (couple names, event dates, sides), each guest's display name, side, avatar and answers (including party-game answers and drawings), and the messages guests send, so they can be moderated, shown on the big screen and printed in the keepsake book. Guest messages and AI-generated questions are checked automatically (using Anthropic's API) before a host approves them. The wedding owner can ask us to delete a wedding and all its guest data at any time.</li>
 <li><strong>Party records.</strong> When a host sets up a party we store: the theme and mode, the guest(s) of honour's names and date if entered, plan status, the number of players, and baby predictions if the host saves them for later scoring.</li>
 <li><strong>Attribution.</strong> We record how the host found us (UTM tags and the referring website) with the party, and count anonymous page views per page per day. No cookies are used for this and no IP addresses are stored.</li>
 <li><strong>Payments.</strong> Card payments are processed by Stripe; we never see or store card numbers. We keep the amount, date and party id.</li>

@@ -8,7 +8,7 @@
   <link rel="icon" href="/icons/favicon-48.png" sizes="48x48" />
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css" /><link rel="stylesheet" href="/wedding.css" />
+  <link rel="stylesheet" href="/styles.css" /><link rel="stylesheet" href="/wedding.css" /><link rel="stylesheet" href="/wedding-games.css" />
 </head>
 <body class="wed">
   <main class="wed-wrap">
@@ -25,7 +25,7 @@
         <div class="stat3"><div><b id="sAnswered">0</b>answered</div><div><b id="sActive">0</b>active now</div><div><b id="sGuests">0</b>guests</div></div>
       </div>
       <div class="card"><div class="ctl" id="controls"></div>
-        <label class="switch" style="margin-top:10px"><input type="checkbox" id="autoReveal" checked /><span class="slider"></span><span>Reveal automatically when time is up</span></label></div>
+        <label class="switch" style="margin-top:10px"><input type="checkbox" id="autoReveal" checked /><span class="slider"></span><span>Advance automatically when time is up (reveals, votes and party games)</span></label></div>
       <div class="card"><h2>Rounds</h2><div class="items" id="runItems"></div></div>
     </section>
 
@@ -48,7 +48,7 @@
       </div>
       <div class="card"><h2>Rounds in this event <span class="pill" id="itemCount">0</span></h2>
         <div class="items" id="prepItems"></div>
-        <div class="row"><select class="input" id="newKind"><option value="mc">Multiple choice</option><option value="who">Who said it / who is more likely</option><option value="shoe">Shoe game</option><option value="emoji">Guess the song (emoji)</option><option value="vote">Vote (dance-off etc.)</option><option value="prompt">Wishes / toasts prompt</option></select><button class="btn btn-ghost btn-sm" id="addRound">➕ Add round</button></div>
+        <div class="row"><select class="input" id="newKind"><option value="mc">Multiple choice</option><option value="who">Who said it / who is more likely</option><option value="shoe">Shoe game</option><option value="emoji">Guess the song (emoji)</option><option value="vote">Vote (dance-off etc.)</option><option value="prompt">Wishes / toasts prompt</option><optgroup label="Party games"><option value="quip">⚔️ Quip Clash (write &amp; vote)</option><option value="fib">🕵️ Fib Finder (lies vs truth)</option><option value="doodle">🎨 Doodle Duel (draw &amp; vote)</option><option value="pulse">📊 Crowd Pulse (guess the room)</option></optgroup></select><button class="btn btn-ghost btn-sm" id="addRound">➕ Add round</button></div>
         <div id="editor"></div>
         <details style="margin-top:10px"><summary>📚 Classic questions for this pack</summary><div class="items" id="bank"></div></details>
         <div class="row" style="margin-top:10px"><button class="btn btn-gold" id="saveRounds">💾 Save rounds</button><button class="btn btn-ghost" id="translateBtn">🌐 Translate rounds</button></div>

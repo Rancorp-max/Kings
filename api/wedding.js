@@ -5,9 +5,9 @@
  *   POST {action, ...}
  *     owner/co-host (w + token): get, update, add-event, update-event, remove-event, add-cohost, remove-cohost,
  *       generate, approve, translate, start-event, open, reveal, board, finale, end-event, pulse,
- *       notes, moderate-note, wall, keepsake, redeem
+ *       notes, moderate-note, wall, keepsake, redeem, advance, game, review (party games)
  *     public: create, join, resume
- *     guest (w + gid + secret): me, answer, note, ping
+ *     guest (w + gid + secret): me, answer, submit (party games), note, ping
  */
 const { handler, readJson, send, query, httpError } = require('./_lib/http');
 const { getDb } = require('./_lib/db');
@@ -15,11 +15,12 @@ const WD = require('./_lib/wedding');
 const AI = require('./_lib/ai');
 const { randomId } = require('./_lib/events');
 const { site } = require('./_lib/config');
+const G = require('./_lib/games');
 
 const HOST_ACTIONS = new Set(['get', 'update', 'add-event', 'update-event', 'remove-event', 'add-cohost', 'remove-cohost', 'generate', 'approve', 'translate',
-  'start-event', 'open', 'reveal', 'board', 'finale', 'end-event', 'pulse', 'notes', 'moderate-note', 'wall', 'keepsake', 'redeem']);
+  'start-event', 'open', 'reveal', 'board', 'finale', 'end-event', 'pulse', 'notes', 'moderate-note', 'wall', 'keepsake', 'redeem', 'advance', 'game', 'review']);
 const OWNER_ACTIONS = new Set(['update', 'add-cohost', 'remove-cohost', 'redeem']);
-const GUEST_ACTIONS = new Set(['me', 'answer', 'note', 'ping']);
+const GUEST_ACTIONS = new Set(['me', 'answer', 'submit', 'note', 'ping']);
 
 async function logAi(wid, usage, ok, db) {
   for (const u of usage || []) await db.set('ai_calls', randomId(10), { ...u, ok, weddingId: wid, createdAt: Date.now() });
@@ -74,6 +75,7 @@ module.exports = handler(['GET', 'POST'], async (req, res) => {
       case 'me': return send(res, 200, { ...(await WD.guestSummary(w, g, db)), wedding: await WD.publicWedding(w, db) });
       case 'ping': await WD.touch(w.id, g.id, db); return send(res, 200, { ok: true });
       case 'answer': return send(res, 200, await WD.submitAnswer(w.id, g, { eventId: b.eventId, index: b.index, choice: b.choice }, db));
+      case 'submit': return send(res, 200, await G.submit(w.id, g, b, db));
       case 'note': {
         const client = AI.getWeddingClient();
         const note = await WD.addNote(w.id, g, b, async (text) => {
@@ -152,6 +154,14 @@ module.exports = handler(['GET', 'POST'], async (req, res) => {
     case 'finale': return send(res, 200, { live: await WD.finale(wid, db) });
     case 'end-event': return send(res, 200, { live: await WD.endEvent(wid, db) });
     case 'pulse': return send(res, 200, await WD.hostPulse(wid, db));
+    case 'advance': {
+      const client = AI.getWeddingClient();
+      const logged = (purpose, fn) => async (list) => { const r = await fn(client, list); if (r.usage) await logAi(wid, [{ purpose, ...r.usage }], !!r.ok, db); return r; };
+      const moderator = client ? { texts: logged('game-moderation', AI.moderateGameTexts), images: logged('doodle-moderation', AI.moderateDoodles) } : null;
+      return send(res, 200, { live: await G.advance(wid, WD, { moderator }, db) });
+    }
+    case 'game': return send(res, 200, await G.hostState(wid, db));
+    case 'review': return send(res, 200, { live: await G.review(wid, WD, b.keep, db) });
     case 'wall': return send(res, 200, { live: await WD.refreshWall(wid, db) });
     case 'notes': {
       const notes = await db.query(WD.col.notes(wid), { field: 'createdAt', op: '>', value: Number(b.since) || 0, limit: 500 });

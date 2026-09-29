@@ -2,6 +2,7 @@
 // live state across every event. Answers are optimistic and retried offline.
 import { $, $$, esc, params, store, api, followLive, answerQueue, toast, AVATARS, COLORS } from './common.js';
 import { t, LANGS, useLanguage, fontStack, itemText, optionText } from './i18n.js';
+import { renderGameGuest, gameRejected, isGameStage } from './games-guest.js';
 
 let lang = store.get('pdw_lang') || (navigator.language || 'en').slice(0, 2);
 if (!LANGS[lang]) lang = 'en';
@@ -76,7 +77,11 @@ function startPlay(w, g) {
   $('#vJoin').classList.add('hidden'); $('#vPlay').classList.remove('hidden');
   if (store.get('pdw_show_code')) { $('#gCodeCard').classList.remove('hidden'); $('#gCode').textContent = creds.guestCode; store.del('pdw_show_code'); }
   renderMe();
-  queue = answerQueue(creds, (item, r) => { if (r && r.ok === false && r.reason === 'late') toast(t(lang, 'too_slow')); updateOffline(); });
+  queue = answerQueue(creds, (item, r) => {
+    if (item.key && r?.error) gameRejected(item, r, live);
+    else if (r && r.ok === false && r.reason === 'late') toast(t(lang, 'too_slow'));
+    updateOffline();
+  });
   follower = followLive(w.id, (l, prev, clock) => { now = clock; live = l; renderBrand(l); renderStage(l, prev); });
   refreshMe();
   setInterval(() => api({ action: 'ping', w: creds.w, gid: creds.gid, secret: creds.secret }), 45000 + Math.random() * 10000);
@@ -120,6 +125,8 @@ function optPair(item, i) {
 
 let lastView = '';
 function renderStage(l, prev) {
+  if (isGameStage(l)) { lastView = ''; renderGameGuest($('#gStage'), l, prev, { lang, creds, queue, toast, refreshMe }); return; }
+  delete document.body.dataset.game;
   const el = $('#gStage'); const it = l.item; const key = `${l.eventId}:${l.index}`;
   const mine = picked[key] ?? queue?.has(l.eventId, l.index)?.choice;
   // Answer buttons must not be rebuilt under a finger: only redraw when what this guest sees changes.

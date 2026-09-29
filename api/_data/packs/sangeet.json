@@ -1,158 +1,194 @@
 {
- "id": "sangeet",
- "name": "Sangeet",
- "emoji": "💃",
- "description": "Team trivia, dance-off voting and \"guess the song from the emoji\" — made for music, performances and friendly side-vs-side rivalry.",
- "rounds": [
-  "Team trivia",
-  "Dance-off voting (guests vote for the best performance)",
-  "Guess the song from the emoji (titles only)"
- ],
- "defaults": [
-  {
-   "kind": "vote",
-   "text": "Dance-off! Vote for the best performance",
-   "options": [
-    "Performance 1",
-    "Performance 2"
-   ],
-   "optionSides": [
-    "a",
-    "b"
-   ]
-  },
-  {
-   "kind": "emoji",
-   "text": "Guess the song from the emoji!",
-   "emoji": "👰🎶➡️⛪",
-   "options": [
-    "Here Comes the Bride",
-    "Twinkle Twinkle Little Star",
-    "Happy Birthday to You",
-    "Jingle Bells"
-   ],
-   "correct": 0
-  },
-  {
-   "kind": "emoji",
-   "text": "Guess the song from the emoji!",
-   "emoji": "✨✨⭐❓",
-   "options": [
-    "London Bridge Is Falling Down",
-    "Twinkle Twinkle Little Star",
-    "Row, Row, Row Your Boat",
-    "Old MacDonald Had a Farm"
-   ],
-   "correct": 1
-  },
-  {
-   "kind": "emoji",
-   "text": "Guess the song from the emoji!",
-   "emoji": "🎂🎉🎵",
-   "options": [
-    "Mary Had a Little Lamb",
-    "Itsy Bitsy Spider",
-    "Happy Birthday to You",
-    "The Wheels on the Bus"
-   ],
-   "correct": 2
-  },
-  {
-   "kind": "emoji",
-   "text": "Guess the song from the emoji!",
-   "emoji": "🔔🔔🛷🎄",
-   "options": [
-    "Here Comes the Bride",
-    "Twinkle Twinkle Little Star",
-    "Happy Birthday to You",
-    "Jingle Bells"
-   ],
-   "correct": 3
-  },
-  {
-   "kind": "emoji",
-   "text": "Guess the song from the emoji!",
-   "emoji": "🚣🚣🚣🌊😴",
-   "options": [
-    "Row, Row, Row Your Boat",
-    "Twinkle Twinkle Little Star",
-    "Happy Birthday to You",
-    "Jingle Bells"
-   ],
-   "correct": 0
-  },
-  {
-   "kind": "emoji",
-   "text": "Guess the song from the emoji!",
-   "emoji": "👴🚜🐄🐖",
-   "options": [
-    "The Wheels on the Bus",
-    "Old MacDonald Had a Farm",
-    "Row, Row, Row Your Boat",
-    "London Bridge Is Falling Down"
-   ],
-   "correct": 1
-  }
- ],
- "bank": [
-  {
-   "kind": "mc",
-   "text": "Which side has the most cousins at this wedding?",
-   "options": [
-    "{a}'s side",
-    "{b}'s side",
-    "It's a tie",
-    "Nobody can count that high"
-   ],
-   "correct": null
-  },
-  {
-   "kind": "mc",
-   "text": "What is {a}'s signature dance move?",
-   "options": [
-    "The bhangra shoulders",
-    "The twirl",
-    "The robot",
-    "Refuses to dance"
-   ],
-   "correct": null
-  },
-  {
-   "kind": "mc",
-   "text": "Who will dance the longest tonight?",
-   "options": [
-    "{a}",
-    "{b}",
-    "The grandparents",
-    "The kids"
-   ],
-   "correct": null
-  },
-  {
-   "kind": "mc",
-   "text": "Which music would {b} request from the DJ?",
-   "options": [
-    "Bollywood classics",
-    "Punjabi beats",
-    "Pop",
-    "Retro"
-   ],
-   "correct": null
-  },
-  {
-   "kind": "who",
-   "text": "Who sings in the shower?",
-   "correct": null
-  },
-  {
-   "kind": "who",
-   "text": "Who is the better dancer?",
-   "correct": null
-  },
-  {
-   "kind": "who",
-   "text": "Who controls the car playlist?",
-   "correct": null
-  }
- ]
+  "id": "sangeet",
+  "name": "Sangeet",
+  "emoji": "💃",
+  "description": "Team trivia, dance-off voting and \"guess the song from the emoji\" — made for music, performances and friendly side-vs-side rivalry. Plus party games: Quip Clash, Doodle Duel, Crowd Pulse and Fib Finder.",
+  "rounds": [
+    "Team trivia",
+    "Dance-off voting (guests vote for the best performance)",
+    "Guess the song from the emoji (titles only)"
+  ],
+  "defaults": [
+    {
+      "kind": "vote",
+      "text": "Dance-off! Vote for the best performance",
+      "options": [
+        "Performance 1",
+        "Performance 2"
+      ],
+      "optionSides": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "kind": "emoji",
+      "text": "Guess the song from the emoji!",
+      "emoji": "👰🎶➡️⛪",
+      "options": [
+        "Here Comes the Bride",
+        "Twinkle Twinkle Little Star",
+        "Happy Birthday to You",
+        "Jingle Bells"
+      ],
+      "correct": 0
+    },
+    {
+      "kind": "emoji",
+      "text": "Guess the song from the emoji!",
+      "emoji": "✨✨⭐❓",
+      "options": [
+        "London Bridge Is Falling Down",
+        "Twinkle Twinkle Little Star",
+        "Row, Row, Row Your Boat",
+        "Old MacDonald Had a Farm"
+      ],
+      "correct": 1
+    },
+    {
+      "kind": "emoji",
+      "text": "Guess the song from the emoji!",
+      "emoji": "🎂🎉🎵",
+      "options": [
+        "Mary Had a Little Lamb",
+        "Itsy Bitsy Spider",
+        "Happy Birthday to You",
+        "The Wheels on the Bus"
+      ],
+      "correct": 2
+    },
+    {
+      "kind": "emoji",
+      "text": "Guess the song from the emoji!",
+      "emoji": "🔔🔔🛷🎄",
+      "options": [
+        "Here Comes the Bride",
+        "Twinkle Twinkle Little Star",
+        "Happy Birthday to You",
+        "Jingle Bells"
+      ],
+      "correct": 3
+    },
+    {
+      "kind": "emoji",
+      "text": "Guess the song from the emoji!",
+      "emoji": "🚣🚣🚣🌊😴",
+      "options": [
+        "Row, Row, Row Your Boat",
+        "Twinkle Twinkle Little Star",
+        "Happy Birthday to You",
+        "Jingle Bells"
+      ],
+      "correct": 0
+    },
+    {
+      "kind": "emoji",
+      "text": "Guess the song from the emoji!",
+      "emoji": "👴🚜🐄🐖",
+      "options": [
+        "The Wheels on the Bus",
+        "Old MacDonald Had a Farm",
+        "Row, Row, Row Your Boat",
+        "London Bridge Is Falling Down"
+      ],
+      "correct": 1
+    },
+    {
+      "kind": "quip",
+      "text": "The name of {a} and {b}'s dance crew would be ___"
+    },
+    {
+      "kind": "doodle",
+      "text": "Draw {b}'s signature dance move"
+    },
+    {
+      "kind": "pulse",
+      "text": "Did you practise a dance for tonight?"
+    },
+    {
+      "kind": "quip",
+      "text": "The one song the DJ is NOT allowed to play tonight: ___"
+    }
+  ],
+  "bank": [
+    {
+      "kind": "mc",
+      "text": "Which side has the most cousins at this wedding?",
+      "options": [
+        "{a}'s side",
+        "{b}'s side",
+        "It's a tie",
+        "Nobody can count that high"
+      ],
+      "correct": null
+    },
+    {
+      "kind": "mc",
+      "text": "What is {a}'s signature dance move?",
+      "options": [
+        "The bhangra shoulders",
+        "The twirl",
+        "The robot",
+        "Refuses to dance"
+      ],
+      "correct": null
+    },
+    {
+      "kind": "mc",
+      "text": "Who will dance the longest tonight?",
+      "options": [
+        "{a}",
+        "{b}",
+        "The grandparents",
+        "The kids"
+      ],
+      "correct": null
+    },
+    {
+      "kind": "mc",
+      "text": "Which music would {b} request from the DJ?",
+      "options": [
+        "Bollywood classics",
+        "Punjabi beats",
+        "Pop",
+        "Retro"
+      ],
+      "correct": null
+    },
+    {
+      "kind": "who",
+      "text": "Who sings in the shower?",
+      "correct": null
+    },
+    {
+      "kind": "who",
+      "text": "Who is the better dancer?",
+      "correct": null
+    },
+    {
+      "kind": "who",
+      "text": "Who controls the car playlist?",
+      "correct": null
+    },
+    {
+      "kind": "quip",
+      "text": "{a}'s secret talent that will be revealed tonight: ___"
+    },
+    {
+      "kind": "doodle",
+      "text": "Draw the perfect sangeet outfit"
+    },
+    {
+      "kind": "pulse",
+      "text": "Will you still be dancing when the last song plays?"
+    },
+    {
+      "kind": "fib",
+      "text": "The first song {a} and {b} ever danced to together was called ___"
+    },
+    {
+      "kind": "fib",
+      "text": "{a} once performed on stage as ___"
+    }
+  ]
 }

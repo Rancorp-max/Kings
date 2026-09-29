@@ -9,7 +9,14 @@ const { getDb } = require('./_lib/db');
 const memo = new Map(); // per-instance micro-cache (same idea as the CDN cache)
 
 module.exports = handler(['GET'], async (req, res) => {
-  const wid = String(query(req).w || '').slice(0, 40);
+  const q = query(req);
+  // Doodle Duel finalists' drawings: fetched once per round, immutable, so cached for a long time.
+  if (q.art) {
+    const art = await getDb().get('wedding_art', String(q.art).slice(0, 20));
+    if (!art) throw httpError(404, 'Not found');
+    return send(res, 200, { art: art.art }, { 'cache-control': 'public, max-age=3600, s-maxage=86400, immutable' });
+  }
+  const wid = String(q.w || '').slice(0, 40);
   if (!wid) throw httpError(400, 'Missing wedding');
   const hit = memo.get(wid);
   let live;

@@ -23,6 +23,7 @@ const { getDb } = require('./db');
 const { site } = require('./config');
 const { httpError } = require('./http');
 const { sha256, randomId, clip, cleanAttribution } = require('./events');
+const G = require('./games');
 
 const W = site.weddings;
 const SHARDS = 10;
@@ -98,6 +99,7 @@ function cleanEvent(e = {}, existing = {}) {
 
 // ---------------------------------------------------------------- items
 function cleanItem(it) {
+  if (it && G.KINDS.includes(it.kind)) return G.cleanGameItem(it, withTranslations(it));
   if (!it || !['mc', 'who', 'emoji', 'shoe', 'vote', 'prompt'].includes(it.kind)) return null;
   const text = clip(it.text, 220); if (!text) return null;
   const out = { kind: it.kind, text };
@@ -125,9 +127,20 @@ function cleanItem(it) {
   return out;
 }
 
-// What guests/screens may see of an item before the reveal (no correct answer).
+// Party-game items keep their translations the same way (text only).
+function withTranslations(it) {
+  return (out) => {
+    if (out && it.translations && typeof it.translations === 'object') {
+      out.translations = {};
+      for (const [lang, tr] of Object.entries(it.translations)) if (LANGS.includes(lang) && tr?.text) out.translations[lang] = { text: clip(tr.text, 300) };
+    }
+    return out;
+  };
+}
+
+// What guests/screens may see of an item before the reveal (no correct answer, no fib truth).
 function publicItem(it) {
-  const { correct, ...rest } = it; // eslint-disable-line no-unused-vars
+  const { correct, answer, decoys, ...rest } = it; // eslint-disable-line no-unused-vars
   return rest;
 }
 
@@ -368,9 +381,10 @@ async function openItem(wid, index, db = getDb()) {
   const i = Number.isInteger(index) ? index : (live.index ?? -1) + 1;
   const it = ev.items[i];
   if (!it) throw httpError(400, 'No more rounds in this event — show the scoreboard or the finale.');
+  if (G.KINDS.includes(it.kind)) return G.openGame(wid, module.exports, live, ev, it, i, db);
   const ms = STAGE_MS[it.kind] || QUESTION_MS; const t = now();
   const stage = it.kind === 'vote' ? 'vote' : it.kind === 'prompt' ? 'prompt' : 'question';
-  return setLive(wid, (cur) => ({ ...cur, stage, index: i, item: { ...publicItem(it), index: i }, openedAt: t, deadline: t + ms, durationMs: ms, reveal: null, board: null, answered: 0 }), db);
+  return setLive(wid, (cur) => ({ ...cur, stage, index: i, item: { ...publicItem(it), index: i }, openedAt: t, deadline: t + ms, durationMs: ms, reveal: null, board: null, answered: 0, game: null }), db);
 }
 
 /* Server-side aggregation: read every answer for the open item once, tally,
@@ -448,7 +462,7 @@ async function leaderboard(w, scores, db = getDb(), n = 10) {
 async function showBoard(wid, db = getDb()) {
   const w = await db.get('weddings', wid); const scores = await db.get('wedding_scores', wid);
   const board = await leaderboard(w, scores, db);
-  return setLive(wid, (cur) => ({ ...cur, stage: 'board', board }), db);
+  return setLive(wid, (cur) => ({ ...cur, stage: 'board', board, deadline: null }), db);
 }
 
 async function finale(wid, db = getDb()) {
@@ -464,7 +478,7 @@ async function finale(wid, db = getDb()) {
 async function endEvent(wid, db = getDb()) {
   const live = await db.get('wedding_live', wid);
   if (live?.eventId) await db.update(col.events(wid), live.eventId, (e) => (e ? { ...e, status: 'done', endedAt: now() } : undefined));
-  return setLive(wid, (cur) => ({ ...cur, stage: 'idle', eventId: null, item: null, reveal: null, deadline: null }), db);
+  return setLive(wid, (cur) => ({ ...cur, stage: 'idle', eventId: null, item: null, reveal: null, deadline: null, game: null }), db);
 }
 
 // ---------------------------------------------------------------- guest actions
@@ -483,6 +497,7 @@ async function submitAnswer(wid, g, { eventId, index, choice }, db = getDb()) {
 
 async function answeredCount(wid, db = getDb()) {
   const live = await db.get('wedding_live', wid);
+  const gp = G.countPath(wid, live); if (gp) return db.count(gp);
   if (!live || !['question', 'vote', 'reveal', 'voteResult'].includes(live.stage)) return 0;
   return db.count(col.answers(wid, live.eventId, live.index));
 }
@@ -502,7 +517,9 @@ async function hostPulse(wid, db = getDb()) {
   const guests = await guestCount(wid, db);
   // Mirror the counts into the live doc so screens/guests see them — at most one write per host poll.
   const live = await db.get('wedding_live', wid);
-  if (live && (live.answered !== answered || live.active !== active || live.guests !== guests)) await setLive(wid, (cur) => ({ ...cur, answered, active, guests }), db);
+  const recent = live ? await G.recentAvatars(wid, live, db) : null; // avatars popping up on the big screen as guests submit
+  const recentChanged = recent && JSON.stringify(recent) !== JSON.stringify(live.recent || []);
+  if (live && (live.answered !== answered || live.active !== active || live.guests !== guests || recentChanged)) await setLive(wid, (cur) => ({ ...cur, answered, active, guests, ...(recent ? { recent } : {}) }), db);
   return { answered, active, guests };
 }
 

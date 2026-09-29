@@ -7,7 +7,10 @@ const creds = hostCreds(wid);
 let wedding = null; let live = null; let now = () => Date.now();
 let evId = params.get('e') || null; let mode = 'run';
 let items = []; let drafts = []; let editing = null; let packs = null; let pending = [];
-const KIND = { mc: 'Quiz', who: 'Who?', emoji: 'Song', shoe: 'Shoe', vote: 'Vote', prompt: 'Wishes' };
+const KIND = { mc: 'Quiz', who: 'Who?', emoji: 'Song', shoe: 'Shoe', vote: 'Vote', prompt: 'Wishes', quip: '⚔️ Quip Clash', fib: '🕵️ Fib Finder', doodle: '🎨 Doodle Duel', pulse: '📊 Crowd Pulse' };
+const GAME_KINDS = ['quip', 'fib', 'doodle', 'pulse'];
+const ADVANCE = new Set(['write', 'draw', 'poll', 'clash', 'clashResult', 'pick', 'gallery']);
+const NEXT_LABEL = { write: '⏩ Close answers & start the vote', draw: '⏩ Close drawings & open the gallery', poll: '⏩ Reveal the room', clash: '⏩ Reveal this clash', clashResult: '⏩ Next clash', pick: '⏩ Reveal the truth', gallery: '⏩ Reveal the winner' };
 
 const noCreds = !creds;
 if (noCreds) {
@@ -45,12 +48,19 @@ function renderRun() {
   const st = running ? live.stage : 'not started';
   $('#liveStage').textContent = `${ev.name}: ${st}`;
   const it = running ? live.item : null;
-  $('#liveView').innerHTML = it ? `<div class="q">${it.kind === 'emoji' ? esc(it.emoji) + ' ' : ''}${esc(it.text)}</div>${it.options ? `<div class="small muted">${it.options.map(esc).join(' · ')}</div>` : ''}` : running && live.stage === 'board' ? '<div class="q">Leaderboard on screen</div>' : running && live.stage === 'finale' ? '<div class="q">🎆 Finale on screen</div>' : '';
+  const src = running && it ? ev.items[live.index] : null;
+  if (running && live.game) {
+    const g = live.game;
+    $('#liveView').innerHTML = `<div class="q">${KIND[g.kind]} · <b>${esc(live.stage)}</b></div><div class="small">${esc(it?.text || '')}</div>${src?.answer ? `<div class="small muted">Truth (only hosts see this): <b>${esc(src.answer)}</b></div>` : ''}${g.round !== undefined && g.total ? `<div class="small muted">Clash ${g.round + 1} of ${g.total}</div>` : ''}<div id="reviewBox"></div>`;
+    if (live.stage === 'review') loadReview();
+  } else $('#liveView').innerHTML = it ? `<div class="q">${it.kind === 'emoji' ? esc(it.emoji) + ' ' : ''}${esc(it.text)}</div>${it.options ? `<div class="small muted">${it.options.map(esc).join(' · ')}</div>` : ''}` : running && live.stage === 'board' ? '<div class="q">Leaderboard on screen</div>' : running && live.stage === 'finale' ? '<div class="q">🎆 Finale on screen</div>' : '';
   const c = [];
   if (!running) c.push(`<button class="btn btn-gold wide" data-do="start">▶ Start ${esc(ev.name)}</button>`);
   else {
     const next = (live.index ?? -1) + 1;
-    if (live.stage === 'question' || live.stage === 'vote') {
+    if (live.game && ADVANCE.has(live.stage)) c.push(`<button class="btn btn-gold wide" data-do="advance">${NEXT_LABEL[live.stage]}</button>`);
+    else if (live.stage === 'review') c.push('<p class="small muted wide">Automatic checking is unavailable, so pick what goes on the big screen below.</p>');
+    else if (live.stage === 'question' || live.stage === 'vote') {
       if (it.kind === 'shoe') c.push(...it.options.map((o, i) => `<button class="btn btn-pink" data-do="reveal" data-correct="${i}">👠 ${esc(o)}'s shoe</button>`), `<button class="btn btn-ghost" data-do="reveal" data-correct="-1">🤷 They disagreed</button>`);
       else c.push('<button class="btn btn-gold wide" data-do="reveal">⏩ Reveal now</button>');
     } else if (next < ev.items.length) c.push(`<button class="btn btn-gold wide" data-do="open" data-index="${next}">▶ Next round (${next + 1}/${ev.items.length})</button>`);
@@ -64,7 +74,7 @@ function renderRun() {
 async function doAction(b) {
   const a = b.dataset.do;
   b.disabled = true;
-  const map = { start: { action: 'start-event', eventId: evId }, open: { action: 'open', index: Number(b.dataset.index) }, reveal: { action: 'reveal', ...(b.dataset.correct !== undefined ? { correct: Number(b.dataset.correct) } : {}) }, board: { action: 'board' }, finale: { action: 'finale' }, end: { action: 'end-event' }, wall: { action: 'wall' } };
+  const map = { start: { action: 'start-event', eventId: evId }, open: { action: 'open', index: Number(b.dataset.index) }, reveal: { action: 'reveal', ...(b.dataset.correct !== undefined ? { correct: Number(b.dataset.correct) } : {}) }, board: { action: 'board' }, finale: { action: 'finale' }, end: { action: 'end-event' }, wall: { action: 'wall' }, advance: { action: 'advance' } };
   if (a === 'end' && !confirm('End this event? Scores are kept for the wedding.')) { b.disabled = false; return; }
   const r = await host(map[a]);
   b.disabled = false;
@@ -74,7 +84,7 @@ async function doAction(b) {
 }
 
 // Host pulse: counts + peak players; also auto-reveal at the buzzer.
-let revealing = false;
+let revealing = false; let lastAuto = '';
 async function pulse() {
   const r = await host({ action: 'pulse' });
   if (!r.error) { $('#sAnswered').textContent = r.answered; $('#sActive').textContent = r.active; $('#sGuests').textContent = r.guests; }
@@ -85,12 +95,30 @@ function tick() {
   const bar = $('#tb');
   if (live?.deadline && live.durationMs) {
     bar.style.width = Math.max(0, Math.min(100, ((live.deadline - now()) / live.durationMs) * 100)) + '%';
-    if ($('#autoReveal').checked && !revealing && now() > live.deadline + 800 && ['question', 'vote'].includes(live.stage) && live.item?.kind !== 'shoe') {
+    const autoKey = `${live.v}|${live.stage}`;
+    if ($('#autoReveal').checked && !revealing && live.game && ADVANCE.has(live.stage) && now() > live.deadline + 900 && lastAuto !== autoKey) {
+      revealing = true; lastAuto = autoKey;
+      host({ action: 'advance' }).then((r) => { revealing = false; if (r.live) { live = r.live; renderRun(); follower.refresh(); } });
+    } else if ($('#autoReveal').checked && !revealing && now() > live.deadline + 800 && ['question', 'vote'].includes(live.stage) && live.item?.kind !== 'shoe') {
       revealing = true;
       host({ action: 'reveal' }).then((r) => { revealing = false; if (r.live) { live = r.live; renderRun(); } });
     }
   } else bar.style.width = '0%';
   requestAnimationFrame(tick);
+}
+
+// Party-game review (only when automatic moderation is unavailable): the host picks what reaches the big screen.
+async function loadReview() {
+  const r = await host({ action: 'game' }); const box = $('#reviewBox'); if (!box || r.error || !r.game?.review) return;
+  const { toSvg } = await import('./doodle.js');
+  box.innerHTML = `<div class="editor"><b>Approve for the big screen</b>${r.game.review.map((c, i) => `<label class="it"><input type="checkbox" data-keep="${i}" ${i < 8 ? 'checked' : ''} /><span class="tx">${c.strokes ? `<span style="display:inline-block;width:90px">${toSvg(c.strokes)}</span>` : `“${esc(c.text)}”`}<small>${esc(c.avatar || '')} ${esc(c.name || '')}</small></span></label>`).join('')}
+    <button class="btn btn-gold btn-block" id="reviewGo">✅ Show the approved ones</button></div>`;
+  $('#reviewGo').addEventListener('click', async () => {
+    const keep = $$('#reviewBox [data-keep]').filter((x) => x.checked).map((x) => Number(x.dataset.keep));
+    const res = await host({ action: 'review', keep });
+    if (res.error) { toast(res.error, 4000); return; }
+    live = res.live; renderRun(); follower.refresh();
+  });
 }
 
 // ---------------------------------------------------------------- prepare
@@ -104,7 +132,7 @@ function renderPrep() {
   $('#langNote').textContent = plus ? 'Guests can switch language on their phones; the big screen shows both languages.' : `Other languages come with ${W.plans.plus.label}.`;
   $('#translateBtn').classList.toggle('hidden', !plus);
   $('#itemCount').textContent = items.length;
-  $('#prepItems').innerHTML = items.map((x, i) => `<div class="it"><span class="k">${KIND[x.kind]}</span><span class="tx">${x.kind === 'emoji' ? esc(x.emoji) + ' ' : ''}${esc(x.text)}${x.options ? `<small>${x.options.map((o, j) => (j === x.correct ? `✅ ${esc(o)}` : esc(o))).join(' · ')}</small>` : ''}${x.translations && Object.keys(x.translations).length ? `<small>🌐 ${Object.keys(x.translations).join(', ')}</small>` : ''}</span>
+  $('#prepItems').innerHTML = items.map((x, i) => `<div class="it"><span class="k">${KIND[x.kind]}</span><span class="tx">${x.kind === 'emoji' ? esc(x.emoji) + ' ' : ''}${esc(x.text)}${x.answer ? `<small>✅ ${esc(x.answer)}${x.decoys?.length ? ` · decoys: ${x.decoys.map(esc).join(', ')}` : ''}</small>` : ''}${x.options ? `<small>${x.options.map((o, j) => (j === x.correct ? `✅ ${esc(o)}` : esc(o))).join(' · ')}</small>` : ''}${x.translations && Object.keys(x.translations).length ? `<small>🌐 ${Object.keys(x.translations).join(', ')}</small>` : ''}</span>
     <span class="ops"><button class="mini" data-up="${i}">↑</button><button class="mini" data-edit="${i}">✎</button><button class="mini" data-del="${i}">✕</button></span></div>`).join('');
   $('#drafts').innerHTML = drafts.length ? `<h2 style="margin-top:12px">Drafts — review before approving</h2>${drafts.map((d, i) => `<label class="it"><input type="checkbox" data-draft="${i}" checked /><span class="k">${KIND[d.kind]}</span><span class="tx">${d.kind === 'emoji' ? esc(d.emoji) + ' ' : ''}${esc(d.text)}${d.options ? `<small>${d.options.map((o, j) => (j === d.correct ? `✅ ${esc(o)}` : esc(o))).join(' · ')}</small>` : ''}</span></label>`).join('')}<button class="btn btn-gold btn-block" id="approveDrafts">✅ Approve selected</button>` : '';
   renderBank(); renderEditor();
@@ -128,7 +156,11 @@ function renderEditor() {
   el.innerHTML = `<div class="editor"><b>${editing.index === null ? 'New' : 'Edit'} ${KIND[x.kind]} round</b>
     ${x.kind === 'emoji' ? `<input class="input" id="edEmoji" placeholder="Emoji clue e.g. 🌙✨💃" value="${esc(x.emoji || '')}" />` : ''}
     <textarea class="input" id="edText" rows="2" placeholder="${x.kind === 'prompt' ? 'e.g. Share your best advice for the couple' : 'Question'}">${esc(x.text || '')}</textarea>
-    ${x.kind === 'prompt' ? `<select class="input" id="edNoteKind">${['wish', 'advice', 'prediction', 'toast', 'story'].map((k) => `<option ${x.noteKind === k ? 'selected' : ''}>${k}</option>`).join('')}</select>` : optRows}
+    ${x.kind === 'fib' ? `<input class="input" id="edAnswer" maxlength="40" placeholder="The TRUE answer (guests write lies to hide it)" value="${esc(x.answer || '')}" /><input class="input" id="edDecoys" placeholder="Optional house lies, comma-separated (used if few guests write)" value="${esc((x.decoys || []).join(', '))}" /><p class="small muted">Use ___ in the question for the blank, e.g. “On their first date they ate ___”.</p>` : ''}
+    ${x.kind === 'quip' ? '<p class="small muted">A fill-in-the-blank prompt (use ___). Guests write funny answers, then vote head to head.</p>' : ''}
+    ${x.kind === 'doodle' ? '<p class="small muted">Something to draw, e.g. “Draw the couple\'s first date”. The best drawings go on the big screen for a vote.</p>' : ''}
+    ${x.kind === 'pulse' ? '<p class="small muted">A yes/no question for the room, e.g. “Have you ever cried at a wedding?” Guests answer and guess the % who said yes.</p>' : ''}
+    ${GAME_KINDS.includes(x.kind) ? '' : x.kind === 'prompt' ? `<select class="input" id="edNoteKind">${['wish', 'advice', 'prediction', 'toast', 'story'].map((k) => `<option ${x.noteKind === k ? 'selected' : ''}>${k}</option>`).join('')}</select>` : optRows}
     ${x.kind === 'vote' ? '<button class="mini" id="edAddOpt">+ option</button>' : ''}
     ${x.kind === 'emoji' ? '<p class="small muted">Song TITLES only — never lyrics.</p>' : ''}
     <div class="row"><button class="btn btn-gold btn-sm" id="edOk">Done</button><button class="btn btn-ghost btn-sm" id="edCancel">Cancel</button></div><p class="err" id="edErr"></p></div>`;
@@ -139,6 +171,7 @@ function readEditor() {
   x.text = $('#edText').value.trim();
   if ($('#edEmoji')) x.emoji = $('#edEmoji').value.trim();
   if ($('#edNoteKind')) x.noteKind = $('#edNoteKind').value;
+  if ($('#edAnswer')) { x.answer = $('#edAnswer').value.trim(); x.decoys = $('#edDecoys').value.split(',').map((d) => d.trim()).filter(Boolean).slice(0, 4); if (!x.answer) return 'Write the true answer.'; }
   $$('#editor [data-opt]').forEach((inp) => { x.options[Number(inp.dataset.opt)] = inp.value.trim(); });
   $$('#editor [data-oside]').forEach((s) => { (x.optionSides ||= [])[Number(s.dataset.oside)] = s.value || null; });
   const c = $('#editor [data-corr]:checked'); if (c) x.correct = Number(c.dataset.corr);
@@ -207,14 +240,14 @@ $('#prepItems').addEventListener('click', (e) => {
 });
 $('#addRound').addEventListener('click', () => {
   const k = $('#newKind').value;
-  const item = { kind: k, text: '', ...(k === 'mc' || k === 'emoji' ? { options: ['', '', '', ''] } : k === 'vote' ? { options: ['Performance 1', 'Performance 2'], optionSides: [] } : k === 'prompt' ? { noteKind: 'wish' } : { options: [] }) };
+  const item = GAME_KINDS.includes(k) ? { kind: k, text: '' } : { kind: k, text: '', ...(k === 'mc' || k === 'emoji' ? { options: ['', '', '', ''] } : k === 'vote' ? { options: ['Performance 1', 'Performance 2'], optionSides: [] } : k === 'prompt' ? { noteKind: 'wish' } : { options: [] }) };
   editing = { index: null, item }; renderEditor();
 });
 $('#bank').addEventListener('click', (e) => {
   const i = e.target.dataset.bank; if (i === undefined) return;
   const q = packs[event().pack].bank[Number(i)]; const [a, b] = JSON.parse($('#bank').dataset.names);
   const fill = (s) => String(s).replace(/\{a\}/g, a).replace(/\{b\}/g, b).replace(/\{couple\}/g, `${a} & ${b}`);
-  editing = { index: null, item: { kind: q.kind, text: fill(q.text), options: q.kind === 'who' ? [a, b] : (q.options || []).map(fill), correct: null } };
+  editing = { index: null, item: GAME_KINDS.includes(q.kind) ? { kind: q.kind, text: fill(q.text), ...(q.kind === 'fib' ? { answer: '', decoys: (q.decoys || []).map(fill) } : {}) } : { kind: q.kind, text: fill(q.text), options: q.kind === 'who' ? [a, b] : (q.options || []).map(fill), correct: null } };
   renderEditor(); $('#editor').scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 $('#editor').addEventListener('click', (e) => {

@@ -75,3 +75,19 @@ every screen ─GET /api/wedding-live (edge-cached 1 s + 700 ms memo)◀── o
 - **Languages:** en, hi, pa, ur, gu, ta, es, fr (Plus). The UI strings are in `public/js/wedding/i18n.js`. Noto fonts load on demand. Urdu uses `dir=rtl` with `dir=auto`/`ltr` islands for mixed text and emoji. Items can carry a second-language line, and screens show both.
 - **Billing** (`api/_lib/billing.js`): Wedding Pass / Plus are one-time Checkout payments (upgrades never downgrade; valid `passValidDays`). DJ/MC Pro is a yearly Stripe subscription tracked in `licences/` (token hash, status, 3-day grace, brand name and logo applied to every wedding the licence creates). Wedding Etsy codes use the same hashed single-use codes, typed by `product`.
 - **Load:** `npm run test:load` simulates 500 guests (join, polling, answers, votes with family weights, notes). It checks exact tallies and prints p50/p95 latency.
+
+## Party games (Jackbox-style), in every wedding event
+
+`api/_lib/games.js` adds four round types to the wedding engine. The host advances each one; the big screen animates it (`public/js/wedding/games-screen.js`, `public/wedding-games.css`); phones take input (`games-guest.js`, drawing pad in `doodle.js`).
+
+| Game | Phases | Scoring |
+|---|---|---|
+| ⚔️ Quip Clash | write → (review) → 3 × clash ⇄ clashResult → gameOver | share of the vote × 1000, +500 win, +500 clean sweep; +100 for writing |
+| 🕵️ Fib Finder | write → (review) → pick → fibReveal | +1000 for finding the truth; liars +500 per guest fooled (scaled for big rooms, cap 3000) |
+| 🎨 Doodle Duel | draw → (review) → gallery → galleryResult | share × 2000, +1000 winner |
+| 📊 Crowd Pulse | poll → pulseReveal | 1000 − 20 × distance from the real % (+250 within 2) |
+
+- **Scale:** one doc per submission/vote (`gsubs_{run}`, `gvotes_{run}_{round}`), tallied once per phase. Only the ~16 answers sampled for the screen are moderated, in one batched claude-haiku-4-5 call (drawings as small JPEGs). Private state (authors, the fib truth, candidates) lives in `weddings/{wid}/games/{run}`; the live doc only carries what the current phase may show. Finalists' drawings are served once per round from `/api/wedding-live?art=` with a long cache.
+- **Safety:** a blocklist check on every submission (the guest can rewrite); lies too close to the truth are refused; nobody can vote for their own answer; if automatic moderation is unavailable, the phase stops at **review** and a host approves what goes on screen.
+- **Bad Wi-Fi:** inputs go through the same retry queue as answers and are restored after a reload.
+- Tests: `tests/unit/games.test.mjs`, `tests/e2e/wedding-games.js` (projector + 5 phones, screenshots in `tests/results/games-*.png`), and the load test includes a 500-guest Quip Clash and Crowd Pulse.

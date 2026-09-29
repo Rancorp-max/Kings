@@ -2,9 +2,10 @@
 import { $, esc, params, followLive, qr, joinUrl } from './common.js';
 import { t, useLanguage, fontStack, itemText, optionText } from './i18n.js';
 import { confetti } from '../confetti.js';
+import { renderGame, isGameStage, clearGameTimers, tickGame } from './games-screen.js';
 
 const wid = params.get('w'); let code = params.get('c') || '';
-let live = null; let now = () => Date.now(); let finaleTimer = null; let lastKey = '';
+let live = null; let now = () => Date.now(); let finaleTimer = null; let lastKey = ''; let lastGameKey = '';
 
 function langs(l) { return [l.lang || 'en', l.secondLang].filter(Boolean); }
 function pair(item, l) {
@@ -36,6 +37,8 @@ function render(l, prev) {
   const key = `${l.stage}|${l.eventId}|${l.index}`;
   const changed = key !== lastKey; lastKey = key;
   const m = $('#main'); const it = l.item;
+  if (isGameStage(l)) { const gk = `${key}|${l.game.run}|${l.game.round}`; const gChanged = gk !== lastGameKey; lastGameKey = gk; if (gChanged) clearTimeout(finaleTimer); renderGame(m, l, prev, gChanged); return; }
+  lastGameKey = ''; clearGameTimers(); delete document.body.dataset.game;
   if (!changed && ['question', 'vote'].includes(l.stage)) { const c = $('#ansCount'); if (c) c.textContent = `${l.answered || 0} ${t('en', 'answered')}`; return; }
   clearTimeout(finaleTimer);
   switch (l.stage) {
@@ -80,6 +83,7 @@ function finale(l) {
 function tick() {
   const bar = $('#tb');
   if (bar && live?.deadline && live.durationMs) bar.style.width = Math.max(0, Math.min(100, ((live.deadline - now()) / live.durationMs) * 100)) + '%';
+  if (live && isGameStage(live)) tickGame(live, now());
   requestAnimationFrame(tick);
 }
 

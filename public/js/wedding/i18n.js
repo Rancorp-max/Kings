@@ -111,6 +111,91 @@ const T = {
   },
 };
 
+// Party-game strings (Quip Clash, Fib Finder, Doodle Duel, Crowd Pulse). Drafts for native review, like the rest.
+const GAME = {
+  en: {
+    g_quip: 'Quip Clash', g_fib: 'Fib Finder', g_doodle: 'Doodle Duel', g_pulse: 'Crowd Pulse',
+    write_quip: 'Write the funniest answer!', write_fib: 'Write a lie that sounds true!', draw_it: 'Draw it!', drawing_hint: 'Draw with your finger',
+    guess_pct: 'What % of the room will say YES?', yes: 'Yes', no: 'No', submit: 'Send', sent: 'Sent! Watch the big screen 👀',
+    chars_left: 'characters left', undo: 'Undo', clear: 'Clear', hosts_choosing: 'The hosts are picking the best answers…',
+    vote_best: 'Vote for your favourite!', your_quip_in: 'Your answer is in this clash! 🤞', find_truth: 'Which one is the TRUTH?', your_lie: 'Your lie',
+    found_truth: 'You found the truth!', fooled_by: 'Fooled by', your_lie_fooled: 'Your lie fooled', people: 'people',
+    you_won: 'You won this clash!', you_lost: 'So close — great answer!', actual_pct: 'The room said YES', you_guessed: 'You guessed',
+    best_quip: 'Quip of the round', not_enough: 'Not enough answers this time — on to the next round!', own_art: 'That\'s your drawing!', clash_n: 'Clash',
+  },
+  hi: {
+    g_quip: 'जवाबी जंग', g_fib: 'झूठ पकड़ो', g_doodle: 'चित्र मुक़ाबला', g_pulse: 'भीड़ की नब्ज़',
+    write_quip: 'सबसे मज़ेदार जवाब लिखें!', write_fib: 'ऐसा झूठ लिखें जो सच लगे!', draw_it: 'चित्र बनाइए!', drawing_hint: 'उंगली से बनाइए',
+    guess_pct: 'कितने % लोग "हाँ" कहेंगे?', yes: 'हाँ', no: 'नहीं', submit: 'भेजें', sent: 'भेज दिया! बड़ी स्क्रीन देखें 👀',
+    chars_left: 'अक्षर बाकी', undo: 'वापस', clear: 'मिटाएँ', hosts_choosing: 'मेज़बान सबसे अच्छे जवाब चुन रहे हैं…',
+    vote_best: 'अपने पसंदीदा को वोट दें!', your_quip_in: 'इस मुक़ाबले में आपका जवाब है! 🤞', find_truth: 'इनमें से सच कौन-सा है?', your_lie: 'आपका झूठ',
+    found_truth: 'आपने सच पकड़ लिया!', fooled_by: 'इसके झूठ में फँसे:', your_lie_fooled: 'आपके झूठ में फँसे', people: 'लोग',
+    you_won: 'आप यह मुक़ाबला जीत गए!', you_lost: 'बहुत क़रीब — शानदार जवाब!', actual_pct: 'कमरे ने "हाँ" कहा', you_guessed: 'आपका अनुमान',
+    best_quip: 'इस राउंड का सबसे अच्छा जवाब', not_enough: 'इस बार जवाब कम थे — अगला राउंड!', own_art: 'यह आपका चित्र है!', clash_n: 'मुक़ाबला',
+  },
+  pa: {
+    g_quip: 'ਜਵਾਬੀ ਜੰਗ', g_fib: 'ਝੂਠ ਫੜੋ', g_doodle: 'ਚਿੱਤਰ ਮੁਕਾਬਲਾ', g_pulse: 'ਭੀੜ ਦੀ ਨਬਜ਼',
+    write_quip: 'ਸਭ ਤੋਂ ਮਜ਼ੇਦਾਰ ਜਵਾਬ ਲਿਖੋ!', write_fib: 'ਅਜਿਹਾ ਝੂਠ ਲਿਖੋ ਜੋ ਸੱਚ ਲੱਗੇ!', draw_it: 'ਚਿੱਤਰ ਬਣਾਓ!', drawing_hint: 'ਉਂਗਲ ਨਾਲ ਬਣਾਓ',
+    guess_pct: 'ਕਿੰਨੇ % ਲੋਕ "ਹਾਂ" ਕਹਿਣਗੇ?', yes: 'ਹਾਂ', no: 'ਨਹੀਂ', submit: 'ਭੇਜੋ', sent: 'ਭੇਜ ਦਿੱਤਾ! ਵੱਡੀ ਸਕਰੀਨ ਦੇਖੋ 👀',
+    chars_left: 'ਅੱਖਰ ਬਾਕੀ', undo: 'ਵਾਪਸ', clear: 'ਮਿਟਾਓ', hosts_choosing: 'ਮੇਜ਼ਬਾਨ ਸਭ ਤੋਂ ਵਧੀਆ ਜਵਾਬ ਚੁਣ ਰਹੇ ਹਨ…',
+    vote_best: 'ਆਪਣੇ ਮਨਪਸੰਦ ਨੂੰ ਵੋਟ ਦਿਓ!', your_quip_in: 'ਇਸ ਮੁਕਾਬਲੇ ਵਿੱਚ ਤੁਹਾਡਾ ਜਵਾਬ ਹੈ! 🤞', find_truth: 'ਇਨ੍ਹਾਂ ਵਿੱਚੋਂ ਸੱਚ ਕਿਹੜਾ ਹੈ?', your_lie: 'ਤੁਹਾਡਾ ਝੂਠ',
+    found_truth: 'ਤੁਸੀਂ ਸੱਚ ਫੜ ਲਿਆ!', fooled_by: 'ਇਸ ਦੇ ਝੂਠ ਵਿੱਚ ਫਸੇ:', your_lie_fooled: 'ਤੁਹਾਡੇ ਝੂਠ ਵਿੱਚ ਫਸੇ', people: 'ਲੋਕ',
+    you_won: 'ਤੁਸੀਂ ਇਹ ਮੁਕਾਬਲਾ ਜਿੱਤ ਗਏ!', you_lost: 'ਬਹੁਤ ਨੇੜੇ — ਸ਼ਾਨਦਾਰ ਜਵਾਬ!', actual_pct: 'ਕਮਰੇ ਨੇ "ਹਾਂ" ਕਿਹਾ', you_guessed: 'ਤੁਹਾਡਾ ਅੰਦਾਜ਼ਾ',
+    best_quip: 'ਇਸ ਰਾਊਂਡ ਦਾ ਸਭ ਤੋਂ ਵਧੀਆ ਜਵਾਬ', not_enough: 'ਇਸ ਵਾਰ ਜਵਾਬ ਘੱਟ ਸਨ — ਅਗਲਾ ਰਾਊਂਡ!', own_art: 'ਇਹ ਤੁਹਾਡਾ ਚਿੱਤਰ ਹੈ!', clash_n: 'ਮੁਕਾਬਲਾ',
+  },
+  ur: {
+    g_quip: 'جوابی جنگ', g_fib: 'جھوٹ پکڑو', g_doodle: 'تصویری مقابلہ', g_pulse: 'محفل کی نبض',
+    write_quip: 'سب سے مزیدار جواب لکھیں!', write_fib: 'ایسا جھوٹ لکھیں جو سچ لگے!', draw_it: 'تصویر بنائیں!', drawing_hint: 'انگلی سے بنائیں',
+    guess_pct: 'کتنے % لوگ "ہاں" کہیں گے؟', yes: 'ہاں', no: 'نہیں', submit: 'بھیجیں', sent: 'بھیج دیا! بڑی اسکرین دیکھیں 👀',
+    chars_left: 'حروف باقی', undo: 'واپس', clear: 'مٹائیں', hosts_choosing: 'میزبان بہترین جواب چن رہے ہیں…',
+    vote_best: 'اپنے پسندیدہ کو ووٹ دیں!', your_quip_in: 'اس مقابلے میں آپ کا جواب ہے! 🤞', find_truth: 'ان میں سے سچ کون سا ہے؟', your_lie: 'آپ کا جھوٹ',
+    found_truth: 'آپ نے سچ پکڑ لیا!', fooled_by: 'اس کے جھوٹ میں آئے:', your_lie_fooled: 'آپ کے جھوٹ میں آئے', people: 'لوگ',
+    you_won: 'آپ یہ مقابلہ جیت گئے!', you_lost: 'بہت قریب — زبردست جواب!', actual_pct: 'محفل نے "ہاں" کہا', you_guessed: 'آپ کا اندازہ',
+    best_quip: 'اس راؤنڈ کا بہترین جواب', not_enough: 'اس بار جواب کم تھے — اگلا راؤنڈ!', own_art: 'یہ آپ کی تصویر ہے!', clash_n: 'مقابلہ',
+  },
+  gu: {
+    g_quip: 'જવાબી જંગ', g_fib: 'જૂઠ પકડો', g_doodle: 'ચિત્ર સ્પર્ધા', g_pulse: 'ભીડની નાડ',
+    write_quip: 'સૌથી મજેદાર જવાબ લખો!', write_fib: 'એવું જૂઠ લખો જે સાચું લાગે!', draw_it: 'ચિત્ર દોરો!', drawing_hint: 'આંગળીથી દોરો',
+    guess_pct: 'કેટલા % લોકો "હા" કહેશે?', yes: 'હા', no: 'ના', submit: 'મોકલો', sent: 'મોકલ્યું! મોટી સ્ક્રીન જુઓ 👀',
+    chars_left: 'અક્ષરો બાકી', undo: 'પાછું', clear: 'ભૂંસો', hosts_choosing: 'યજમાનો શ્રેષ્ઠ જવાબો પસંદ કરી રહ્યા છે…',
+    vote_best: 'તમારા મનપસંદને મત આપો!', your_quip_in: 'આ સ્પર્ધામાં તમારો જવાબ છે! 🤞', find_truth: 'આમાંથી સાચું કયું છે?', your_lie: 'તમારું જૂઠ',
+    found_truth: 'તમે સાચું પકડી પાડ્યું!', fooled_by: 'આના જૂઠમાં ફસાયા:', your_lie_fooled: 'તમારા જૂઠમાં ફસાયા', people: 'લોકો',
+    you_won: 'તમે આ સ્પર્ધા જીતી ગયા!', you_lost: 'ખૂબ નજીક — સરસ જવાબ!', actual_pct: 'રૂમે "હા" કહ્યું', you_guessed: 'તમારો અંદાજ',
+    best_quip: 'આ રાઉન્ડનો શ્રેષ્ઠ જવાબ', not_enough: 'આ વખતે જવાબો ઓછા હતા — આગલો રાઉન્ડ!', own_art: 'આ તમારું ચિત્ર છે!', clash_n: 'સ્પર્ધા',
+  },
+  ta: {
+    g_quip: 'பதில் போர்', g_fib: 'பொய் கண்டுபிடி', g_doodle: 'ஓவியப் போட்டி', g_pulse: 'கூட்டத்தின் நாடி',
+    write_quip: 'மிகவும் வேடிக்கையான பதிலை எழுதுங்கள்!', write_fib: 'உண்மை போலத் தோன்றும் பொய்யை எழுதுங்கள்!', draw_it: 'வரையுங்கள்!', drawing_hint: 'விரலால் வரையுங்கள்',
+    guess_pct: 'எத்தனை % பேர் "ஆம்" என்பார்கள்?', yes: 'ஆம்', no: 'இல்லை', submit: 'அனுப்பு', sent: 'அனுப்பப்பட்டது! பெரிய திரையைப் பாருங்கள் 👀',
+    chars_left: 'எழுத்துகள் மீதம்', undo: 'திரும்பு', clear: 'அழி', hosts_choosing: 'விருந்தினர்கள் சிறந்த பதில்களைத் தேர்ந்தெடுக்கிறார்கள்…',
+    vote_best: 'உங்களுக்குப் பிடித்ததற்கு வாக்களியுங்கள்!', your_quip_in: 'இந்தப் போட்டியில் உங்கள் பதில் உள்ளது! 🤞', find_truth: 'இதில் எது உண்மை?', your_lie: 'உங்கள் பொய்',
+    found_truth: 'உண்மையைக் கண்டுபிடித்தீர்கள்!', fooled_by: 'இவரின் பொய்யில் ஏமாந்தீர்கள்:', your_lie_fooled: 'உங்கள் பொய்யில் ஏமாந்தவர்கள்', people: 'பேர்',
+    you_won: 'இந்தப் போட்டியில் வென்றீர்கள்!', you_lost: 'மிக அருகில் — அருமையான பதில்!', actual_pct: 'அரங்கம் "ஆம்" என்றது', you_guessed: 'உங்கள் ஊகம்',
+    best_quip: 'இந்தச் சுற்றின் சிறந்த பதில்', not_enough: 'இம்முறை பதில்கள் குறைவு — அடுத்த சுற்று!', own_art: 'இது உங்கள் ஓவியம்!', clash_n: 'போட்டி',
+  },
+  es: {
+    g_quip: 'Duelo de Ingenio', g_fib: 'Caza Mentiras', g_doodle: 'Duelo de Dibujos', g_pulse: 'Pulso del Público',
+    write_quip: '¡Escribe la respuesta más graciosa!', write_fib: '¡Escribe una mentira que parezca verdad!', draw_it: '¡Dibújalo!', drawing_hint: 'Dibuja con el dedo',
+    guess_pct: '¿Qué % de la sala dirá que SÍ?', yes: 'Sí', no: 'No', submit: 'Enviar', sent: '¡Enviado! Mira la pantalla grande 👀',
+    chars_left: 'caracteres restantes', undo: 'Deshacer', clear: 'Borrar', hosts_choosing: 'Los anfitriones eligen las mejores respuestas…',
+    vote_best: '¡Vota por tu favorita!', your_quip_in: '¡Tu respuesta está en este duelo! 🤞', find_truth: '¿Cuál es la VERDAD?', your_lie: 'Tu mentira',
+    found_truth: '¡Encontraste la verdad!', fooled_by: 'Te engañó', your_lie_fooled: 'Tu mentira engañó a', people: 'personas',
+    you_won: '¡Ganaste este duelo!', you_lost: '¡Casi! Gran respuesta.', actual_pct: 'La sala dijo SÍ', you_guessed: 'Tu apuesta',
+    best_quip: 'La mejor respuesta de la ronda', not_enough: 'Pocas respuestas esta vez — ¡siguiente ronda!', own_art: '¡Ese es tu dibujo!', clash_n: 'Duelo',
+  },
+  fr: {
+    g_quip: 'Duel de Répliques', g_fib: 'Chasse aux Bobards', g_doodle: 'Duel de Dessins', g_pulse: 'Pouls de la Salle',
+    write_quip: 'Écrivez la réponse la plus drôle !', write_fib: 'Écrivez un mensonge qui sonne vrai !', draw_it: 'Dessinez !', drawing_hint: 'Dessinez avec le doigt',
+    guess_pct: 'Quel % de la salle dira OUI ?', yes: 'Oui', no: 'Non', submit: 'Envoyer', sent: 'Envoyé ! Regardez le grand écran 👀',
+    chars_left: 'caractères restants', undo: 'Annuler', clear: 'Effacer', hosts_choosing: 'Les hôtes choisissent les meilleures réponses…',
+    vote_best: 'Votez pour votre préférée !', your_quip_in: 'Votre réponse est dans ce duel ! 🤞', find_truth: 'Laquelle est la VÉRITÉ ?', your_lie: 'Votre mensonge',
+    found_truth: 'Vous avez trouvé la vérité !', fooled_by: 'Piégé par', your_lie_fooled: 'Votre mensonge a piégé', people: 'personnes',
+    you_won: 'Vous avez gagné ce duel !', you_lost: 'Presque ! Belle réponse.', actual_pct: 'La salle a dit OUI', you_guessed: 'Votre estimation',
+    best_quip: 'La réplique de la manche', not_enough: 'Pas assez de réponses cette fois — manche suivante !', own_art: 'C\'est votre dessin !', clash_n: 'Duel',
+  },
+};
+for (const [l, strings] of Object.entries(GAME)) Object.assign(T[l] || (T[l] = {}), strings);
+
 export const LANGS = SITE.weddings.languages;
 export function t(lang, key) { return (T[lang] && T[lang][key]) || EN[key] || key; }
 

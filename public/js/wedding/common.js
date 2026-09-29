@@ -51,7 +51,7 @@ export function followLive(wid, onLive) {
     if (stopped) return;
     const r = await api(null, { method: 'GET', path: '/api/wedding-live', query: { w: wid } });
     if (!r.error) deliver(r.live, r.serverNow);
-    const busy = last && ['question', 'vote', 'prompt', 'reveal'].includes(last.stage);
+    const busy = last && ['question', 'vote', 'prompt', 'reveal', 'write', 'draw', 'poll', 'clash', 'clashResult', 'pick', 'gallery'].includes(last.stage);
     const next = (busy ? 1200 : 2500) + Math.random() * 600;
     timer = setTimeout(poll, r.error === 'offline' ? 3000 : next);
   };
@@ -84,7 +84,8 @@ export function answerQueue(creds, onResult) {
     if (busy || !q.length) return;
     busy = true;
     for (const item of [...q]) {
-      const r = await api({ action: 'answer', w: creds.w, gid: creds.gid, secret: creds.secret, eventId: item.eventId, index: item.index, choice: item.choice });
+      const auth = { w: creds.w, gid: creds.gid, secret: creds.secret };
+      const r = await api(item.body ? { action: 'submit', ...auth, ...item.body } : { action: 'answer', ...auth, eventId: item.eventId, index: item.index, choice: item.choice });
       if (r.error === 'offline' || r.status >= 500 || r.status === 0) { item.tries = (item.tries || 0) + 1; break; }
       q = q.filter((x) => x !== item); save();
       onResult?.(item, r);
@@ -95,8 +96,10 @@ export function answerQueue(creds, onResult) {
   addEventListener('online', flush);
   return {
     push(item) { q = q.filter((x) => !(x.eventId === item.eventId && x.index === item.index)); q.push({ ...item, at: Date.now() }); save(); flush(); },
+    // Party-game inputs (text, drawings, polls, votes): keyed by run|slot.
+    pushGame(key, body) { q = q.filter((x) => x.key !== key); q.push({ key, body, at: Date.now() }); save(); flush(); },
     pending: () => q.length,
-    has: (eventId, index) => q.find((x) => x.eventId === eventId && x.index === index),
+    has: (eventId, index) => q.find((x) => !x.key && x.eventId === eventId && x.index === index),
   };
 }
 
