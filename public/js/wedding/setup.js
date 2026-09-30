@@ -22,11 +22,19 @@ async function showCreate() {
   // ?events=sangeet,reception preselects events (used by the guide pages' buttons).
   const asked = (params.get('events') || '').split(',').filter((k) => et[k] && k !== 'custom');
   const defaults = asked.length ? asked : ['mehndi', 'sangeet', 'reception'];
-  $('#evPresets').innerHTML = Object.entries(et).filter(([k]) => k !== 'custom').map(([k, v]) => `<label class="it" style="display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.05);padding:8px;border-radius:12px">
-    <input type="checkbox" data-ev="${k}" ${defaults.includes(k) ? 'checked' : ''} /><span style="flex:1">${v.emoji} ${esc(v.name)}</span><input class="input" type="date" data-evdate="${k}" style="max-width:150px" /></label>`).join('');
+  $('#evPresets').innerHTML = Object.entries(et).filter(([k]) => k !== 'custom').map(([k, v]) => `<div class="ev-card ${defaults.includes(k) ? 'on' : ''}">
+    <label class="ev-head"><input type="checkbox" data-ev="${k}" ${defaults.includes(k) ? 'checked' : ''} /><span class="ev-emoji">${v.emoji}</span><span class="ev-name">${esc(v.name)}</span></label>
+    <input class="input ev-date" type="date" data-evdate="${k}" aria-label="${esc(v.name)} date" /></div>`).join('');
   $('#evLimitNote').textContent = licenceToken ? 'Unlimited events.' : `Tick the events you're having. The free trial runs 1 event with up to ${W.plans.trial.maxGuests} guests; a ${W.plans.wedding.label} (${money(W.plans.wedding.priceCents)}) covers ${W.plans.wedding.maxEvents} events and ${W.plans.wedding.maxGuests} guests; ${W.plans.plus.label} (${money(W.plans.plus.priceCents)}) is unlimited with 500 guests and languages.`;
   renderSidesEd('#sidesEd');
 }
+// Ticking an event highlights its card; picking a date ticks it.
+document.addEventListener('change', (e) => {
+  const card = e.target.closest?.('.ev-card'); if (!card) return;
+  const box = card.querySelector('[data-ev]');
+  if (e.target.matches('[data-evdate]') && e.target.value) box.checked = true;
+  card.classList.toggle('on', box.checked);
+});
 function renderSidesEd(sel) {
   $(sel).innerHTML = sides.map((s, i) => `<div class="row" style="margin-bottom:6px"><input type="color" value="${s.color}" data-scol="${i}" style="width:44px;height:40px;border:0;background:none" /><input class="input" data-sname="${i}" maxlength="30" value="${esc(s.name)}" />${sides.length > 2 ? `<button class="mini" data-sdel="${i}">✕</button>` : ''}</div>`).join('');
 }

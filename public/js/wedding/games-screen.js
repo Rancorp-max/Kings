@@ -20,7 +20,7 @@ export function clearGameTimers() { timers.forEach(clearTimeout); timers = []; }
 
 const artCache = new Map();
 async function loadArt(id) {
-  if (!artCache.has(id)) artCache.set(id, fetch(`/api/wedding-live?art=${encodeURIComponent(id)}`).then((r) => r.json()).then((d) => d.art || []).catch(() => []));
+  if (!artCache.has(id)) artCache.set(id, fetch(`/api/wedding?action=art&id=${encodeURIComponent(id)}`).then((r) => r.json()).then((d) => d.art || []).catch(() => []));
   return artCache.get(id);
 }
 

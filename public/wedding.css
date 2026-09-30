@@ -141,3 +141,17 @@ body.projector { overflow: hidden; height: 100vh; }
 
 .brand-line { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 14px 0 0; font-size: 13px; opacity: .75; }
 .brand-line img { height: 26px; max-width: 110px; object-fit: contain; }
+
+/* setup: event cards with a full-width date */
+html:has(body.wed) { background: #12060f; }
+.ev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.ev-card { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 14px; background: rgba(255,255,255,.05); border: 2px solid transparent; transition: border-color .2s, background .2s; min-width: 0; }
+.ev-card.on { border-color: var(--gold); background: rgba(243,201,105,.1); }
+.ev-head { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; min-width: 0; }
+.ev-head input { width: 20px; height: 20px; accent-color: var(--gold); flex: none; }
+.ev-emoji { font-size: 20px; flex: none; }
+.ev-name { line-height: 1.2; }
+.wed input[type=date], .wed input[type=time] { color-scheme: dark; box-sizing: border-box; }
+.wed .row > input[type=date], .wed .row > input[type=time] { flex: 1 1 140px; min-width: 130px; }
+.ev-date { width: 100%; min-width: 0; font-size: 15px; padding: 9px 10px; }
+.ev-card:not(.on) .ev-date { opacity: .55; }

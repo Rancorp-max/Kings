@@ -88,5 +88,15 @@ function tick() {
 }
 
 if (!wid) $('#main').innerHTML = '<div class="big">Open this screen from the host panel.</div>';
-else { followLive(wid, (l, prev, clock) => { now = clock; live = l; render(l, prev); }); requestAnimationFrame(tick); }
+else {
+  // Say what's wrong instead of showing a blank screen (it keeps retrying in the background).
+  const onError = (r) => {
+    if (live) return;
+    $('#main').innerHTML = r.status === 404
+      ? '<div class="big">We couldn\'t find this wedding\'s screen.</div><div class="big2">Open the big screen again from your wedding dashboard or host panel.</div>'
+      : '<div class="big">Connecting to the wedding…</div><div class="big2">Check this device\'s internet connection — we\'ll keep trying.</div>';
+  };
+  followLive(wid, (l, prev, clock) => { now = clock; live = l; render(l, prev); }, { onError });
+  requestAnimationFrame(tick);
+}
 document.addEventListener('dblclick', () => document.documentElement.requestFullscreen?.().catch(() => {}));

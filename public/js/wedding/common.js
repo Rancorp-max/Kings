@@ -41,7 +41,7 @@ export function saveHost(wid, token) { const all = store.get('pdw_hosts', {}); a
 /* Follow the live state. Polls the edge-cached endpoint (fast during rounds,
  * slower when idle, with jitter so 500 phones don't sync up). If Firebase web
  * config is present, listens to Firestore instead and falls back to polling. */
-export function followLive(wid, onLive) {
+export function followLive(wid, onLive, { onError } = {}) {
   let stopped = false; let last = null; let offset = 0; let timer = null;
   const deliver = (live, serverNow) => {
     if (serverNow) offset = serverNow - Date.now();
@@ -49,8 +49,8 @@ export function followLive(wid, onLive) {
   };
   const poll = async () => {
     if (stopped) return;
-    const r = await api(null, { method: 'GET', path: '/api/wedding-live', query: { w: wid } });
-    if (!r.error) deliver(r.live, r.serverNow);
+    const r = await api(null, { method: 'GET', path: '/api/wedding', query: { action: 'live', w: wid } });
+    if (!r.error) deliver(r.live, r.serverNow); else onError?.(r);
     const busy = last && ['question', 'vote', 'prompt', 'reveal', 'write', 'draw', 'poll', 'clash', 'clashResult', 'pick', 'gallery'].includes(last.stage);
     const next = (busy ? 1200 : 2500) + Math.random() * 600;
     timer = setTimeout(poll, r.error === 'offline' ? 3000 : next);
@@ -64,7 +64,7 @@ export function followLive(wid, onLive) {
       const db = getFirestore(initializeApp(cfg, 'pdw'));
       onSnapshot(doc(db, 'wedding_live', wid), (snap) => { if (snap.exists()) deliver(snap.data(), null); }, () => poll());
       // Clock offset still comes from our API once.
-      const r = await api(null, { method: 'GET', path: '/api/wedding-live', query: { w: wid } }); if (!r.error) deliver(r.live, r.serverNow);
+      const r = await api(null, { method: 'GET', path: '/api/wedding', query: { action: 'live', w: wid } }); if (!r.error) deliver(r.live, r.serverNow);
       return true;
     } catch { return false; }
   };

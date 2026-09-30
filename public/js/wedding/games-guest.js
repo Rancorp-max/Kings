@@ -17,7 +17,7 @@ const saveMine = (run, patch) => store.set(mineKey(run), { ...mine(run), ...patc
 const slot = (l) => (l.stage === 'clash' ? `clash_${l.game.round}` : l.stage);
 
 const artCache = new Map();
-const loadArt = (id) => { if (!artCache.has(id)) artCache.set(id, fetch(`/api/wedding-live?art=${encodeURIComponent(id)}`).then((r) => r.json()).then((d) => d.art || []).catch(() => [])); return artCache.get(id); };
+const loadArt = (id) => { if (!artCache.has(id)) artCache.set(id, fetch(`/api/wedding?action=art&id=${encodeURIComponent(id)}`).then((r) => r.json()).then((d) => d.art || []).catch(() => [])); return artCache.get(id); };
 
 /* ctx: { lang, creds, queue, toast, refreshMe } — set by guest.js on every render. */
 export function renderGameGuest(el, l, prev, c) {

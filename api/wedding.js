@@ -28,10 +28,35 @@ async function logAi(wid, usage, ok, db) {
   if (cost) await db.increment('weddings', wid, { aiCostUsd: cost });
 }
 
+// Cached at the edge for 1 s, plus a per-instance memo, so 500 phones polling cost ~1 read/second per wedding.
+const liveMemo = new Map();
+async function sendLive(q, res, db) {
+  const wid = String(q.w || '').slice(0, 40);
+  if (!wid) throw httpError(400, 'Missing wedding');
+  const hit = liveMemo.get(wid);
+  let live;
+  if (hit && Date.now() - hit.at < 700) live = hit.live;
+  else {
+    live = await db.get('wedding_live', wid);
+    if (!live) throw httpError(404, 'Wedding not found', 'no_wedding');
+    liveMemo.set(wid, { at: Date.now(), live });
+    if (liveMemo.size > 500) liveMemo.delete(liveMemo.keys().next().value);
+  }
+  return send(res, 200, { live, serverNow: Date.now() }, { 'cache-control': 'public, max-age=0, s-maxage=1, stale-while-revalidate=1' });
+}
+
 module.exports = handler(['GET', 'POST'], async (req, res) => {
   const db = getDb();
   if (req.method === 'GET') {
     const q = query(req);
+    // Live state every screen follows (and Doodle Duel art). Served by this same function so that,
+    // without Firestore, it reads the same storage as the rest of the wedding API.
+    if (q.action === 'live') return sendLive(q, res, db);
+    if (q.action === 'art') {
+      const art = await db.get('wedding_art', String(q.id || '').slice(0, 20));
+      if (!art) throw httpError(404, 'Not found');
+      return send(res, 200, { art: art.art }, { 'cache-control': 'public, max-age=3600, s-maxage=86400, immutable' });
+    }
     if (q.action === 'packs') {
       const packs = WD.loadPacks();
       return send(res, 200, { packs, eventTypes: WD.EVENT_TYPES }, { 'cache-control': 'public, max-age=300, s-maxage=3600' });

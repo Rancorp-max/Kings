@@ -59,16 +59,16 @@ async function pool(items, size, fn) { const q = [...items]; await Promise.all(A
 
     // Everyone polls the live state like the phones do (1.2–1.8 s with jitter) for the rest of the test.
     let polling = true; let polls = 0;
-    const pollers = guests.map(async () => { await sleep(Math.random() * 1500); while (polling) { const r = await call('live-poll', null, { method: 'GET', path: '/api/wedding-live', query: { w: w.id } }); if (!r.error) polls++; await sleep(1200 + Math.random() * 600); } });
+    const pollers = guests.map(async () => { await sleep(Math.random() * 1500); while (polling) { const r = await call('live-poll', null, { method: 'GET', path: '/api/wedding', query: { action: 'live', w: w.id } }); if (!r.error) polls++; await sleep(1200 + Math.random() * 600); } });
     const pulse = setInterval(() => host({ action: 'pulse' }), 2500);
     await Promise.all(guests.map((g) => call('ping', { action: 'ping', w: w.id, gid: g.gid, secret: g.secret })));
 
     // 2) Question: answers spread over ~15 s (1 in 4 wrong), host reveals at the buzzer.
     await host({ action: 'start-event', eventId: eid });
     await host({ action: 'open', index: 0 });
-    const liveBefore = (await call('live-poll', null, { method: 'GET', path: '/api/wedding-live', query: { w: w.id } })).live.v;
+    const liveBefore = (await call('live-poll', null, { method: 'GET', path: '/api/wedding', query: { action: 'live', w: w.id } })).live.v;
     await Promise.all(guests.map(async (g) => { await sleep(300 + Math.random() * 15000); await call('answer', { action: 'answer', w: w.id, gid: g.gid, secret: g.secret, eventId: eid, index: 0, choice: g.i % 4 === 3 ? 1 : 0 }); }));
-    const liveAfterAnswers = (await call('live-poll', null, { method: 'GET', path: '/api/wedding-live', query: { w: w.id } })).live.v;
+    const liveAfterAnswers = (await call('live-poll', null, { method: 'GET', path: '/api/wedding', query: { action: 'live', w: w.id } })).live.v;
     const tr = Date.now(); const rev = await host({ action: 'reveal' }); const revealMs = Date.now() - tr;
     const counts = rev.live.reveal.counts; const expectWrong = guests.filter((g) => g.i % 4 === 3).length;
     const okQ = counts[0] === guests.length - expectWrong && counts[1] === expectWrong;

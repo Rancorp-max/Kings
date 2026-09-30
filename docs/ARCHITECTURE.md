@@ -56,7 +56,7 @@ Weddings are a **separate option** next to the party rooms. The party rooms are 
 ```
 guest phone ──POST /api/wedding (join, answer, ping, note)──▶ Firestore (per-guest docs; no shared hot doc)
 host/co-host ─POST /api/wedding (open, reveal, board, finale)─▶ tally server-side → ONE write to wedding_live/{id}
-every screen ─GET /api/wedding-live (edge-cached 1 s + 700 ms memo)◀── or Firestore onSnapshot if firebaseWeb is set
+every screen ─GET /api/wedding?action=live (edge-cached 1 s + 700 ms memo)◀── or Firestore onSnapshot if firebaseWeb is set
 ```
 
 - **Pages:** `/wedding/setup` (create + owner dashboard), `/wedding/host` (run/prepare/moderate, from a phone or the projector laptop), `/wedding/screen` (projector, animated finale), `/w` (guests), `/wedding/book` (keepsake book, Letter/A4/8×8), `/dj` (DJ/MC Pro licence), `/weddings` (product page) + 7 guide pages generated from `scripts/pages/weddings.js`.
@@ -87,7 +87,7 @@ every screen ─GET /api/wedding-live (edge-cached 1 s + 700 ms memo)◀── o
 | 🎨 Doodle Duel | draw → (review) → gallery → galleryResult | share × 2000, +1000 winner |
 | 📊 Crowd Pulse | poll → pulseReveal | 1000 − 20 × distance from the real % (+250 within 2) |
 
-- **Scale:** one doc per submission/vote (`gsubs_{run}`, `gvotes_{run}_{round}`), tallied once per phase. Only the ~16 answers sampled for the screen are moderated, in one batched claude-haiku-4-5 call (drawings as small JPEGs). Private state (authors, the fib truth, candidates) lives in `weddings/{wid}/games/{run}`; the live doc only carries what the current phase may show. Finalists' drawings are served once per round from `/api/wedding-live?art=` with a long cache.
+- **Scale:** one doc per submission/vote (`gsubs_{run}`, `gvotes_{run}_{round}`), tallied once per phase. Only the ~16 answers sampled for the screen are moderated, in one batched claude-haiku-4-5 call (drawings as small JPEGs). Private state (authors, the fib truth, candidates) lives in `weddings/{wid}/games/{run}`; the live doc only carries what the current phase may show. Finalists' drawings are served once per round from `/api/wedding?action=art` with a long cache.
 - **Safety:** a blocklist check on every submission (the guest can rewrite); lies too close to the truth are refused; nobody can vote for their own answer; if automatic moderation is unavailable, the phase stops at **review** and a host approves what goes on screen.
 - **Bad Wi-Fi:** inputs go through the same retry queue as answers and are restored after a reload.
 - Tests: `tests/unit/games.test.mjs`, `tests/e2e/wedding-games.js` (projector + 5 phones, screenshots in `tests/results/games-*.png`), and the load test includes a 500-guest Quip Clash and Crowd Pulse.
