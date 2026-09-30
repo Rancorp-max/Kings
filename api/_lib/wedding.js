@@ -145,6 +145,13 @@ function publicItem(it) {
 }
 
 // ---------------------------------------------------------------- weddings
+// On a deployment without Firestore, data lives in one server instance's /tmp and vanishes when
+// Vercel recycles or adds instances, so say that plainly instead of a bare "not found".
+function weddingMissing(db) {
+  return db?.ephemeral
+    ? httpError(404, 'This wedding was lost because this deployment has no database connected yet (temporary storage). Connect Firebase — see the launch checklist — then create the wedding again.', 'no_database')
+    : httpError(404, 'Wedding not found', 'no_wedding');
+}
 async function createWedding(input = {}, db = getDb(), { licence } = {}) {
   const wid = randomId(9);
   const ownerToken = randomId(18);
@@ -174,7 +181,7 @@ async function createWedding(input = {}, db = getDb(), { licence } = {}) {
 /* Owner or co-host. Returns { wedding, role, actor }. */
 async function requireHost(wid, token, db = getDb()) {
   const w = wid && await db.get('weddings', String(wid).slice(0, 40));
-  if (!w) throw httpError(404, 'Wedding not found');
+  if (!w) throw weddingMissing(db);
   if (tokenOk(w.ownerTokenHash, token)) return { wedding: w, role: 'owner', actor: 'owner' };
   const ch = (w.cohosts || []).find((c) => tokenOk(c.tokenHash, token));
   if (ch) return { wedding: w, role: 'cohost', actor: ch.id };
@@ -549,7 +556,7 @@ async function refreshWall(wid, db = getDb()) {
 }
 
 module.exports = {
-  EVENT_TYPES, PACKS, LANGS, SHARDS, VOTE_BONUS, col, planOf, limitsOf, scoreAnswer, cleanItem, publicItem, cleanEvent, cleanSides,
+  weddingMissing, EVENT_TYPES, PACKS, LANGS, SHARDS, VOTE_BONUS, col, planOf, limitsOf, scoreAnswer, cleanItem, publicItem, cleanEvent, cleanSides,
   createWedding, requireHost, requireOwner, publicWedding, updateWedding, addEvent, updateEvent, removeEvent, addCohost, removeCohost,
   defaultItems, loadPacks, guestCount, joinWedding, resumeGuest, requireGuest, touch, activeCount,
   setLive, startEvent, openItem, reveal, tally, applyScores, sideTotals, leaderboard, showBoard, finale, endEvent,

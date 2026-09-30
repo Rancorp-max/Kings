@@ -38,7 +38,7 @@ async function sendLive(q, res, db) {
   if (hit && Date.now() - hit.at < 700) live = hit.live;
   else {
     live = await db.get('wedding_live', wid);
-    if (!live) throw httpError(404, 'Wedding not found', 'no_wedding');
+    if (!live) throw WD.weddingMissing(db);
     liveMemo.set(wid, { at: Date.now(), live });
     if (liveMemo.size > 500) liveMemo.delete(liveMemo.keys().next().value);
   }
@@ -94,7 +94,7 @@ module.exports = handler(['GET', 'POST'], async (req, res) => {
   // ---------------------------------------------------------------- guests
   if (GUEST_ACTIONS.has(a)) {
     const w = await db.get('weddings', String(b.w || '').slice(0, 40));
-    if (!w) throw httpError(404, 'Wedding not found');
+    if (!w) throw WD.weddingMissing(db);
     const g = await WD.requireGuest(w.id, b.gid, b.secret, db);
     switch (a) {
       case 'me': return send(res, 200, { ...(await WD.guestSummary(w, g, db)), wedding: await WD.publicWedding(w, db) });

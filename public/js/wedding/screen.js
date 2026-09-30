@@ -92,7 +92,7 @@ else {
   // Say what's wrong instead of showing a blank screen (it keeps retrying in the background).
   const onError = (r) => {
     if (live) return;
-    $('#main').innerHTML = r.status === 404
+    $('#main').innerHTML = r.code === 'no_database' ? `<div class="big2">${esc(r.error)}</div>` : r.status === 404
       ? '<div class="big">We couldn\'t find this wedding\'s screen.</div><div class="big2">Open the big screen again from your wedding dashboard or host panel.</div>'
       : '<div class="big">Connecting to the wedding…</div><div class="big2">Check this device\'s internet connection — we\'ll keep trying.</div>';
   };
